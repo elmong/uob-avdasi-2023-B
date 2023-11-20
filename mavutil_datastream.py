@@ -1,3 +1,5 @@
+#Elmo print all messages
+
 import time 
 import sys
 from pymavlink import mavutil
