@@ -1,3 +1,5 @@
+#Elmo GUI playground ^_^
+
 import tkinter  as tk 
 from tkinter import ttk
 my_w = tk.Tk()
