@@ -3,12 +3,46 @@
 from pymavlink import mavutil
 import numpy as np
 import time
+import pygame
+
+pygame.init()
+SCREEN_WIDTH = 1920
+SREEN_HEIGHT = 1080
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
+default_font = pygame.font.Font('freesansbold.ttf', 32)
+
+airplane = {
+    'pitch': '',
+    'roll': '',
+    'yaw': '',
+    'aoa': '',
+}
+
+def pygame_functions():
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            quit()
+            
+def draw_text(text, font, colour, x, y):
+    img = font.render(text, True, colour)
+    screen.blit(img, (x, y))
+
+def pygame_drawing(): #loop
+    pygame.draw.rect(screen, (255,255,255), (0,0,1920,1080))
+    print(airplane['pitch'])
+    draw_text(airplane['pitch'], default_font, (0,0,0), 1920/2, 1080/2)
+    draw_text(airplane['roll'], default_font, (0,0,0), 1920/2, 1080/2-30*1)
+    draw_text(airplane['yaw'], default_font, (0,0,0), 1920/2, 1080/2-30*2)
+    draw_text(airplane['aoa'], default_font, (0,0,0), 1920/2, 1080/2-30*3)
+    pygame.display.update()
 
 port='tcp:127.0.0.1:5762' # simulator 'tcp:127.0.0.1:5762' , cube com#
 
 connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
 
 connection.wait_heartbeat() #heartbeat so make sure it's connected to the flight controller
+
 
 print("Heartbeat from system (system %u component %u)" % (connection.target_system, connection.target_component))
 
@@ -29,6 +63,7 @@ for i in range(len(mav_commands)):
             )
 
 while True:
+
     msg=connection.recv_match()
 
     if not msg:
@@ -38,15 +73,16 @@ while True:
         #print(attitude)
         
         yaw=attitude['yaw'] #extract value from dictionary : so 'roll', 'pitch', 'yawspeed'
-        print('yaw :' + str(yaw*180/np.pi) +' deg')
+        airplane['yaw'] = 'yaw :' + str(yaw*180/np.pi) +' deg'
         pitch=attitude['pitch']
-        print('pitch :' + str(pitch*180/np.pi) +' deg')
+        airplane['pitch'] = 'pitch :' + str(pitch*180/np.pi) +' deg'
         roll=attitude['roll']
-        print('roll :' + str(roll*180/np.pi) +' deg')
+        airplane['roll'] = 'roll :' + str(roll*180/np.pi) +' deg'
 
     if msg.get_type() == 'AOA_SSA': #get type of message , check mavlink inspector on missionplanner to get type.
         aoa_ssa=msg.to_dict()
-        print('AOA :' + str(aoa_ssa['AOA']))
+        airplane['aoa'] = 'AOA :' + str(aoa_ssa['AOA'])
 
+    pygame_functions()
+    pygame_drawing()
     time.sleep(0.001)
-
