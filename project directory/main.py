@@ -8,6 +8,8 @@ import math
 import pygame
 
 from global_var import airplane_data
+from global_var import input_commands
+
 import window_drawing
 
 window_drawing.draw_bad_screen()
@@ -23,6 +25,8 @@ print("Heartbeat from system (system %u component %u)" % (connection.target_syst
 mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
                 mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA]
 
+refresh_rate_global = 500
+
 # Refresh rate request
 for i in range(len(mav_commands)):
     message = connection.mav.command_long_send(
@@ -31,7 +35,7 @@ for i in range(len(mav_commands)):
             mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
             0,  # Confirmation
             mav_commands[i],  # param1: Message ID to be streamed
-            0.2*10**6, # param2: Interval in microseconds
+            (1/refresh_rate_global)*10**6, # param2: Interval in microseconds
             0, 0, 0, 0, 
             0  # target address
             )
@@ -69,17 +73,17 @@ while True:
         aoa_ssa=msg.to_dict()
         airplane_data['aoa'] = aoa_ssa['AOA']
 
-    # This is woring for sending commands into the sitl
-    ## connection.mav.manual_control_send(connection.target_system,
-    ##     0,
-    ##     0,
-    ##     1000,
-    ##     -1000,
-    ##     0
-    ## )
+    # This is working for sending commands into the sitl
+    connection.mav.manual_control_send(connection.target_system,
+        int(-input_commands['elevator'] * 1000),
+        int(input_commands['aileron'] * 1000),
+        1000,
+        0,
+        0
+    )
+    print(input_commands['aileron'], input_commands['elevator'])
 
     #set_servo(3, 1500 + 500*math.sin(time.time()))
-    print(1500 + 500*math.sin(time.time()))
     window_drawing.draw_loop()
     window_drawing.pygame_functions()
 

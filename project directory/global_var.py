@@ -7,3 +7,9 @@ airplane_data = {
     'aoa': 0,
 }
     
+input_commands = {
+    'elevator': 0,
+    'aileron': 0,
+    'rudder': 0,
+    'throttle': 0,
+}
