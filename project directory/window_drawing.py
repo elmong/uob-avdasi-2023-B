@@ -10,12 +10,13 @@ pygame.init()
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
     'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 32),
-    'dbxl': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 32, ),
-    'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60, ),
+    'dbxl': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 32),
+    'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60),
 
 }
 
 fonts['helvetica'].set_bold(True)
+
 colours = {
     'white' : (255,255,255),
     'black' : (0  ,0  ,0  ),
@@ -33,12 +34,14 @@ def pygame_functions():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
-            
+
 def draw_text(text, font, colour, x, y):
+    text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
     img = font.render(text, True, colour)
     screen.blit(img, (x, y))
                 
 def draw_text_centered(text, font, colour, x, y):
+    text = text.replace('-', '\u2212')
     img = font.render(text, True, colour)
     screen.blit(img, (x - img.get_width()/2, y))
 
