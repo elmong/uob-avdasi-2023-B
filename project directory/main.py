@@ -1,8 +1,10 @@
 #Elmo Extracting and filtering data from cube
 
 from pymavlink import mavutil
+from datetime import datetime
 import numpy as np
 import time
+import math
 import pygame
 
 from global_var import airplane_data
@@ -34,6 +36,18 @@ for i in range(len(mav_commands)):
             0  # target address
             )
 
+# def set_servo(enum, pwm_val):
+#     message = connection.mav.command_long_send(
+#             connection.target_system,  # Target system ID
+#             connection.target_component,  # Target component ID
+#             mavutil.mavlink.MAV_CMD_DO_SET_SERVO,  # ID of command to send
+#             0,  # Confirmation
+#             enum,  # param1: Message ID to be streamed
+#             pwm_val, # param2: Interval in microseconds
+#             0, 0, 0, 0, 
+#             0  # target address
+#             )
+
 while True:
 
     msg=connection.recv_match()
@@ -55,10 +69,18 @@ while True:
         aoa_ssa=msg.to_dict()
         airplane_data['aoa'] = aoa_ssa['AOA']
 
+    # This is woring for sending commands into the sitl
+    ## connection.mav.manual_control_send(connection.target_system,
+    ##     0,
+    ##     0,
+    ##     1000,
+    ##     -1000,
+    ##     0
+    ## )
+
+    #set_servo(3, 1500 + 500*math.sin(time.time()))
+    print(1500 + 500*math.sin(time.time()))
     window_drawing.draw_loop()
     window_drawing.pygame_functions()
-    #pygame_functions()
-    #pygame_drawing()
-    time.sleep(0.001)
 
-#test 
+    time.sleep(0.001)

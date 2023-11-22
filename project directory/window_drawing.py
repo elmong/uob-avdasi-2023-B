@@ -29,6 +29,7 @@ colours = {
 SCREEN_WIDTH = 1920
 SREEN_HEIGHT = 1080
 screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
+# Can set pygame.FULLSCREEN later if a quit button is made.
 
 def pygame_functions():
     for event in pygame.event.get():
