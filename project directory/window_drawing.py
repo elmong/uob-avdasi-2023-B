@@ -2,6 +2,8 @@ import pygame
 import time
 import os
 import math
+import math_helpers
+
 from global_var import airplane_data
 from global_var import input_commands
 
@@ -63,29 +65,15 @@ def draw_control_square(x, y):
     pygame.draw.line(screen, colours['pearl'], (x+450, y+450), (x, y+450), 4)
 
 def draw_control_handle():
-    x_coord = simple_lerp( (-1, 1) , (158, 158+450), input_commands['aileron'])
-    y_coord = simple_lerp( (-1, 1) , (269, 269+450), input_commands['elevator'])
+    x_coord = math_helpers.lerp( (-1, 1) , (158, 158+450), input_commands['aileron'])
+    y_coord = math_helpers.lerp( (-1, 1) , (269, 269+450), input_commands['elevator'])
     pygame.draw.circle(screen, colours['pearl'], (x_coord, y_coord), 20)
-
-def simple_lerp(point1, point2, x): # a helper
-    x1, x2 = point1
-    y1, y2 = point2
-    return ((y2 - y1) / (x2 - x1)) * (x - x1) + y1
-
-def clamper(value, minimum, maximum):
-    if value < minimum:
-        return minimum
-    elif value > maximum:
-        return maximum
-    else:
-        return value
 
 mouse_attached_to_ctrl = False
 
-def attach_control_check(x, y): # if x and y is in range, attach the mouse control
+def attach_control(): # if x and y is in range, attach the mouse control
     global mouse_attached_to_ctrl
-    if x > 158 and x < 158+450 and y > 269 and y < 269+450 :
-        mouse_attached_to_ctrl = True
+    mouse_attached_to_ctrl = True
 
 def detach_control():
     global mouse_attached_to_ctrl
@@ -96,10 +84,10 @@ def update_mouse_control():
     input_commands['elevator'] = 0
     if mouse_attached_to_ctrl:
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        aileron = simple_lerp((158, 158+450), (-1 , 1), mouse_x)
-        aileron = clamper(aileron, -1, 1)
-        elevator = simple_lerp((269, 269+450), (-1 , 1), mouse_y)
-        elevator = clamper(elevator, -1, 1)
+        aileron = math_helpers.lerp((158, 158+450), (-1 , 1), mouse_x)
+        aileron = math_helpers.clamper(aileron, -1, 1)
+        elevator = math_helpers.lerp((269, 269+450), (-1 , 1), mouse_y)
+        elevator = math_helpers.clamper(elevator, -1, 1)
         input_commands['aileron'] = aileron
         input_commands['elevator'] = elevator
 
@@ -111,8 +99,8 @@ def pygame_functions():
             quit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            #print("Mouse Down! At x = " + str(mouse_x) + ' and y = '+ str(mouse_y))
-            attach_control_check(mouse_x, mouse_y)
+            if within(mouse_x, 158, 158+450) and within(mouse_y, 269, 269+450) :
+                attach_control()
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
 
