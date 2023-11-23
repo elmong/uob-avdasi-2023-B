@@ -81,7 +81,6 @@ while True:
         0,
         0
     )
-    print(input_commands['aileron'], input_commands['elevator'])
 
     #set_servo(3, 1500 + 500*math.sin(time.time()))
     window_drawing.draw_loop()

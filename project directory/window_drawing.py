@@ -34,6 +34,15 @@ SREEN_HEIGHT = 1080
 screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
 # Can set pygame.FULLSCREEN later if a quit button is made.
 
+DELTA_TIME = 0.1
+delta_time_record = time.time()
+def GET_DELTA_TIME():
+    global delta_time_record
+    global DELTA_TIME
+    current_time = time.time()
+    DELTA_TIME = current_time - delta_time_record
+    delta_time_record = current_time
+
 def draw_text(text, font, colour, x, y):
     text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
     img = font.render(text, True, colour)
@@ -79,17 +88,23 @@ def detach_control():
     global mouse_attached_to_ctrl
     mouse_attached_to_ctrl = False
 
+
+elevator_damper = math_helpers.SmoothDamp()
+aileron_damper = math_helpers.SmoothDamp()
+
 def update_mouse_control():
-    input_commands['aileron'] = 0
-    input_commands['elevator'] = 0
+    pitch_command = 0
+    roll_command = 0
+
     if mouse_attached_to_ctrl:
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        aileron = math_helpers.lerp((158, 158+450), (-1 , 1), mouse_x)
-        aileron = math_helpers.clamper(aileron, -1, 1)
-        elevator = math_helpers.lerp((269, 269+450), (-1 , 1), mouse_y)
-        elevator = math_helpers.clamper(elevator, -1, 1)
-        input_commands['aileron'] = aileron
-        input_commands['elevator'] = elevator
+        roll_command = math_helpers.lerp((158, 158+450), (-1 , 1), mouse_x)
+        roll_command = math_helpers.clamper(roll_command, -1, 1)
+        pitch_command = math_helpers.lerp((269, 269+450), (-1 , 1), mouse_y)
+        pitch_command = math_helpers.clamper(pitch_command, -1, 1)
+
+    input_commands['elevator'] = elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
+    input_commands['aileron'] = aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
 
 ## Below are the update loop and draw loop, they should always be at the bottom
 
@@ -99,11 +114,12 @@ def pygame_functions():
             quit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            if within(mouse_x, 158, 158+450) and within(mouse_y, 269, 269+450) :
+            if math_helpers.within(mouse_x, 158, 158+450) and math_helpers.within(mouse_y, 269, 269+450) :
                 attach_control()
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
 
+    GET_DELTA_TIME() # should come before anything else
     update_mouse_control()
 
 def draw_loop(): #loop
