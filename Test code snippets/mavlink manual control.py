@@ -18,6 +18,7 @@ master.wait_heartbeat()
 # positive rotation and no button.
 # https://mavlink.io/en/messages/common.html#MANUAL_CONTROL
 # Warning: Because of some legacy workaround, z will work between [0-1000]
+# where 0 is full reverse, 500 is no output and 1000 is full throttle.
 # x,y and r will be between [-1000 and 1000].
 master.mav.manual_control_send(
     master.target_system,
