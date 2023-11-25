@@ -10,6 +10,7 @@ from global_var import input_commands
 root_path = os.path.abspath(os.path.dirname(__file__))
 
 pygame.init()
+
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
     'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 32),
@@ -28,6 +29,8 @@ colours = {
     'pearl' : (247,255,228),
     'red'   : (255,102,95 ),
     'light_blue'   : (154,255,255 ),
+    'green_blue'   : (0  ,201,186 ),
+    'dark_blue'   : (0  ,98,114 ),
 }
 
 SCREEN_WIDTH = 1920
@@ -38,6 +41,73 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
 cursor_ctrl_box_x = 939
 cursor_ctrl_box_y = 540
 cursor_ctrl_side_length = 244
+cursor_ctrl_boost_factor = 1.05 # cursor_ctrl_boost_factor for aesthetics, so that the cross don't stick to the edge
+
+class Button:
+    instances = []
+    def __init__(self, x, y, width, height, colour, text_row1, text_row2=None, callback = None):
+        Button.instances.append(self)
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.colour = colour
+        self.text_row1 = text_row1
+        self.text_row2 = text_row2
+        self.is_hovered = False
+        self.callback = callback
+    
+    def draw(self):
+        draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
+        if self.text_row2:
+            draw_text_centered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 20)
+            draw_text_centered(self.text_row2, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2)
+        else:
+            draw_text_centered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
+    
+    def check_hot(self, mouse_x, mouse_y):
+        self.is_hovered = (
+            self.x < mouse_x < self.x + self.width and
+            self.y < mouse_y < self.y + self.height
+        )
+        return self.is_hovered
+    
+    def actuate(self):
+        if not self.callback:
+            print("WARNING! Button " + str(self.text_row1) + " has no callback!")
+            return
+        self.callback()
+
+class ToggleButton(Button):
+    def __init__(self, x, y, width, height, colour, text_row1, text_row2=None, callback = None):
+        super().__init__( x, y, width, height, colour, text_row1, text_row2, callback)
+        self.state = False
+    def draw(self):
+        draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
+        text_colour = colours['pearl'] # essentially overriding whatever colour argument. All toggle buttons should be of same colour
+        if self.state:
+            text_colour = colours['dark_blue']
+            pygame.draw.rect(screen, colours['green_blue'], (self.x + 3 ,self.y + 3, self.width - 5, self.height - 5))
+    
+        if self.text_row2:
+            draw_text_centered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 20)
+            draw_text_centered(self.text_row2, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2)
+        else:
+            draw_text_centered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
+
+    def actuate(self):
+        self.state = not self.state # change the status of the button
+        super().actuate() # at the same time toggle a function
+
+############ The land of button creation
+quit_button = Button(1704, 0, 122, 64, colours['red'], "QUIT", callback=lambda: quit())
+pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], "PID TUNING")
+button_1 = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 1")
+button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 2")
+button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
+button_5 = ToggleButton(155, 910, 120, 68, colours['pearl'], "FLT", "DIR", callback = lambda: input_commands.update(ap_on=not input_commands['ap_on'])) # This code is so dirty I hate it
+
+############  I love OOP
 
 DELTA_TIME = 0.1
 delta_time_record = time.time()
@@ -85,8 +155,8 @@ def draw_control_square():
     draw_rectangle(cursor_ctrl_box_x, cursor_ctrl_box_y, cursor_ctrl_side_length, cursor_ctrl_side_length, colours['pearl'], 2)
 
 def draw_control_handle():
-    x = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), input_commands['aileron']/1.05) # 1.05 for aesthetics
-    y = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), input_commands['elevator']/1.05)
+    x = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), input_commands['aileron']/cursor_ctrl_boost_factor)
+    y = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), input_commands['elevator']/cursor_ctrl_boost_factor)
     offsets = 3
     line_length = 14
     pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 3)
@@ -107,16 +177,8 @@ def draw_adi():
 def draw_menu():
     draw_line((0, 112), (1920, 112), 3, colours['pearl'])
 
-def draw_button(x, y, width, height, colour, text_row1, text_row2 = None):
-    draw_rectangle(x, y, width, height, colour, 3)
-    if text_row2:
-        draw_text_centered(text_row1, fonts['dbxl_title'], colour, x + width/2, y + height/2 - 20)
-        draw_text_centered(text_row2, fonts['dbxl_title'], colour, x + width/2, y + height/2)
-    else:
-        draw_text_centered(text_row1, fonts['dbxl_title'], colour, x + width/2, y + height/2 - 10)
-
 mouse_attached_to_ctrl = False
-elevator_damper = math_helpers.SmoothDamp() #init the instance
+elevator_damper = math_helpers.SmoothDamp() #init the instances
 aileron_damper = math_helpers.SmoothDamp()
 
 def attach_control(): # if x and y is in range, attach the mouse control
@@ -133,9 +195,9 @@ def update_mouse_control():
 
     if mouse_attached_to_ctrl:
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        roll_command = math_helpers.lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 , 1), mouse_x)
+        roll_command = math_helpers.lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor, 1 * cursor_ctrl_boost_factor), mouse_x)
         roll_command = math_helpers.clamper(roll_command, -1, 1)
-        pitch_command = math_helpers.lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 , 1), mouse_y)
+        pitch_command = math_helpers.lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor , 1 * cursor_ctrl_boost_factor), mouse_y)
         pitch_command = math_helpers.clamper(pitch_command, -1, 1)
 
     input_commands['elevator'] = elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
@@ -143,14 +205,26 @@ def update_mouse_control():
 
 ## Below are the update loop and draw loop, they should always be at the bottom
 
+def draw_buttons():
+    for button in Button.instances:
+        button.draw()
+
 def pygame_functions():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
+
+            # stuff related to the control cursor
             if math_helpers.within(mouse_x, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and math_helpers.within(mouse_y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
                 attach_control()
+            
+            #stuff about the buttons
+            for button in Button.instances:
+                if button.check_hot(mouse_x, mouse_y):
+                    button.actuate()
+
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
 
@@ -164,9 +238,12 @@ def draw_loop(): #loop
     draw_text_centered( 'PITCH : ' + str(round(math.degrees(airplane_data['pitch']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
     draw_text_centered( 'AOA : ' + str(round(math.degrees(airplane_data['aoa']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
 
+    #print(input_commands['elevator'], input_commands['aileron'])
+    print(input_commands['ap_on'])
     draw_control_square()
     draw_control_handle()
     draw_adi()
     draw_menu()
-    draw_button(1704, 0, 122, 64, colours['red'], "QUIT")
+    draw_buttons()
+  
     pygame.display.update()
