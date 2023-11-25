@@ -64,19 +64,21 @@ class Button:
             draw_text_centered(self.text_row2, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2)
         else:
             draw_text_centered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
+        if self.is_hovered:
+            draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
     
     def check_hot(self, mouse_x, mouse_y):
         self.is_hovered = (
             self.x < mouse_x < self.x + self.width and
             self.y < mouse_y < self.y + self.height
         )
-        return self.is_hovered
     
     def actuate(self):
-        if not self.callback:
-            print("WARNING! Button " + str(self.text_row1) + " has no callback!")
-            return
-        self.callback()
+        if self.is_hovered:
+            if not self.callback:
+                print("WARNING! Button " + str(self.text_row1) + " has no callback!")
+                return
+            self.callback()
 
 class ToggleButton(Button):
     def __init__(self, x, y, width, height, colour, text_row1, text_row2=None, callback = None):
@@ -94,10 +96,14 @@ class ToggleButton(Button):
             draw_text_centered(self.text_row2, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2)
         else:
             draw_text_centered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            
+        if self.is_hovered:
+            draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
 
     def actuate(self):
-        self.state = not self.state # change the status of the button
-        super().actuate() # at the same time toggle a function
+        if self.is_hovered:
+            self.state = not self.state # change the status of the button
+            super().actuate() # at the same time toggle a function
 
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], "QUIT", callback=lambda: quit())
@@ -214,16 +220,17 @@ def pygame_functions():
         if event.type == pygame.QUIT:
             quit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
+
+            #stuff about the buttons
+            for button in Button.instances:
+                # the condition to check if mouse is over is already included in the check_hot step than changes a flag
+                button.actuate()
+
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
             # stuff related to the control cursor
             if math_helpers.within(mouse_x, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and math_helpers.within(mouse_y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
                 attach_control()
-            
-            #stuff about the buttons
-            for button in Button.instances:
-                if button.check_hot(mouse_x, mouse_y):
-                    button.actuate()
 
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
@@ -236,10 +243,12 @@ def draw_loop(): #loop
     draw_text_centered( 'YAW : ' + str(round(math.degrees(airplane_data['yaw']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
     draw_text_centered( 'ROLL : ' + str(round(math.degrees(airplane_data['roll']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
     draw_text_centered( 'PITCH : ' + str(round(math.degrees(airplane_data['pitch']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
-    draw_text_centered( 'AOA : ' + str(round(math.degrees(airplane_data['aoa']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
+    draw_text_centered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
 
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    for button in Button.instances:
+        button.check_hot(mouse_x, mouse_y)
     #print(input_commands['elevator'], input_commands['aileron'])
-    print(input_commands['ap_on'])
     draw_control_square()
     draw_control_handle()
     draw_adi()

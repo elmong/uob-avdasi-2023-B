@@ -62,12 +62,13 @@ while True:
         attitude=msg.to_dict() #extract message to dictionary
         #print(attitude)
         
-        yaw=attitude['yaw'] #extract value from dictionary : so 'roll', 'pitch', 'yawspeed'
-        airplane_data['yaw'] = yaw
-        pitch=attitude['pitch']
-        airplane_data['pitch'] = pitch
-        roll=attitude['roll']
-        airplane_data['roll'] = roll
+        #extract value from dictionary : so 'roll', 'pitch', 'yaw'
+        airplane_data['pitch'] = attitude['pitch']
+        airplane_data['pitch_rate'] = attitude['pitchspeed']
+        airplane_data['roll'] = attitude['roll']
+        airplane_data['roll_rate'] = attitude['rollspeed']
+        airplane_data['yaw'] = attitude['yaw']
+        airplane_data['yaw_rate'] = attitude['yawspeed']
 
     if msg.get_type() == 'AOA_SSA': #get type of message , check mavlink inspector on missionplanner to get type.
         aoa_ssa=msg.to_dict()
