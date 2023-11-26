@@ -26,7 +26,8 @@ fonts = {
 }
 
 textures = {
-    'horizon': pygame.image.load(os.path.join(root_path, 'textures', 'horizon.png')).convert_alpha()
+    'horizon': pygame.image.load(os.path.join(root_path, 'textures', 'horizon.png')).convert_alpha(),
+    'wing': pygame.image.load(os.path.join(root_path, 'textures', 'wing.png')).convert_alpha()
 }
 
 fonts['helvetica'].set_bold(True)
@@ -37,6 +38,7 @@ colours = {
     'bgd'   : (1  ,17 ,21 ),
     'pearl' : (247,255,228),
     'red'   : (255,102,95 ),
+    'green'   : (130,245,174 ),
     'light_blue'   : (154,255,255 ),
     'green_blue'   : (0  ,201,186 ),
     'dark_blue'   : (0  ,98,114 ),
@@ -116,7 +118,7 @@ button_1 = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 1"
 button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 2")
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
 button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
-fd_button = ToggleButton(155, 910, 120, 68, colours['pearl'], "FLT", "DIR", callback = lambda: input_commands.update(ap_on=not input_commands['ap_on'])) # This code is so dirty I hate it
+fd_button = ToggleButton(155, 910, 120, 68, colours['pearl'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
 
 ############  I love OOP
 
@@ -149,7 +151,6 @@ def draw_rectangle(x, y, width, height, colour, line_width):
     pygame.draw.line(screen, colour, (x+width, y), (x+width, y+height), line_width)
 
 def draw_image_centered(img, x, y):
-    screen.blit(img, (x, y))
     screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
 
 def draw_image_centered_rotated(img, x, y, angle_deg):
@@ -190,7 +191,8 @@ def draw_control_handle():
     pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 3)
     pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 3)
 
-def draw_adi(roll, pitch):
+
+def draw_adi(roll, pitch, pitch_bar):
     draw_rectangle(220, 319, 464, 464, colours['light_blue'], 3)
     pitch_px_per_deg = 507/80 # 503 px for 80 degrees pitch
     x = 220+464/2
@@ -202,7 +204,12 @@ def draw_adi(roll, pitch):
     screen.set_clip((220, 319), (464, 464))
     screen.blit(img, (horizon_x - img.get_width()/2, horizon_y - img.get_height()/2))
     screen.set_clip(None)
-    pygame.draw.circle(screen, colours['light_blue'], (x, y), 4)
+    draw_image_centered(textures['wing'], x, y+6)
+
+    if input_commands['fd_on']:
+        fd_size = 132
+        fd_y = math_helpers.clamper( y - pitch_bar * pitch_px_per_deg, y-fd_size, y+fd_size)
+        pygame.draw.line(screen, colours['green'], (x-fd_size, fd_y), (x+fd_size, fd_y), 3)
 
 def draw_menu():
     draw_line((0, 112), (1920, 112), 3, colours['pearl'])
@@ -275,7 +282,7 @@ def draw_loop(): #loop
     #print(input_commands['elevator'], input_commands['aileron'])
     draw_control_square()
     draw_control_handle()
-    draw_adi(airplane_data['roll'], airplane_data['pitch'])
+    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
     draw_menu()
     draw_buttons()
   

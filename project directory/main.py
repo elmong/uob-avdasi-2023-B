@@ -83,6 +83,9 @@ while True:
         0
     )
 
+    # Flight Director Pitch Bar
+    input_commands['fd_pitch'] = -airplane_data['pitch']
+
     #set_servo(3, 1500 + 500*math.sin(time.time()))
     window_drawing.draw_loop()
     window_drawing.pygame_functions()
