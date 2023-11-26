@@ -10,6 +10,11 @@ from global_var import input_commands
 root_path = os.path.abspath(os.path.dirname(__file__))
 
 pygame.init()
+SCREEN_WIDTH = 1920
+SREEN_HEIGHT = 1080
+screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
+pygame.display.set_caption('Company B Avionics Suite')
+# Can set pygame.FULLSCREEN later if a quit button is made.
 
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
@@ -18,6 +23,10 @@ fonts = {
     'dbxl_title': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 20),
     'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60),
 
+}
+
+textures = {
+    'horizon': pygame.image.load(os.path.join(root_path, 'textures', 'horizon.png')).convert_alpha()
 }
 
 fonts['helvetica'].set_bold(True)
@@ -32,11 +41,6 @@ colours = {
     'green_blue'   : (0  ,201,186 ),
     'dark_blue'   : (0  ,98,114 ),
 }
-
-SCREEN_WIDTH = 1920
-SREEN_HEIGHT = 1080
-screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
-# Can set pygame.FULLSCREEN later if a quit button is made.
 
 cursor_ctrl_box_x = 939
 cursor_ctrl_box_y = 540
@@ -111,7 +115,8 @@ pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], "PID TUNING
 button_1 = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 1")
 button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 2")
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
-button_5 = ToggleButton(155, 910, 120, 68, colours['pearl'], "FLT", "DIR", callback = lambda: input_commands.update(ap_on=not input_commands['ap_on'])) # This code is so dirty I hate it
+button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
+fd_button = ToggleButton(155, 910, 120, 68, colours['pearl'], "FLT", "DIR", callback = lambda: input_commands.update(ap_on=not input_commands['ap_on'])) # This code is so dirty I hate it
 
 ############  I love OOP
 
@@ -142,6 +147,14 @@ def draw_rectangle(x, y, width, height, colour, line_width):
     pygame.draw.line(screen, colour, (x, y+height), (x+width, y+height), line_width)
     pygame.draw.line(screen, colour, (x, y), (x, y+height), line_width)
     pygame.draw.line(screen, colour, (x+width, y), (x+width, y+height), line_width)
+
+def draw_image_centered(img, x, y):
+    screen.blit(img, (x, y))
+    screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
+
+def draw_image_centered_rotated(img, x, y, angle_deg):
+    img = pygame.transform.rotate(img,-angle_deg)
+    screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
 
 def draw_background_colour():
     pygame.draw.rect(screen, colours['bgd'], (0,0,1920,1080))
@@ -177,8 +190,19 @@ def draw_control_handle():
     pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 3)
     pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 3)
 
-def draw_adi():
+def draw_adi(roll, pitch):
     draw_rectangle(220, 319, 464, 464, colours['light_blue'], 3)
+    pitch_px_per_deg = 507/80 # 503 px for 80 degrees pitch
+    x = 220+464/2
+    y = 319+464/2
+    pitch_offset = pitch_px_per_deg * pitch
+    horizon_x = x + pitch_offset * math.sin(math.radians(roll))
+    horizon_y = y + pitch_offset * math.cos(math.radians(roll))
+    img = pygame.transform.rotate(textures['horizon'],roll)
+    screen.set_clip((220, 319), (464, 464))
+    screen.blit(img, (horizon_x - img.get_width()/2, horizon_y - img.get_height()/2))
+    screen.set_clip(None)
+    pygame.draw.circle(screen, colours['light_blue'], (x, y), 4)
 
 def draw_menu():
     draw_line((0, 112), (1920, 112), 3, colours['pearl'])
@@ -240,9 +264,9 @@ def pygame_functions():
 
 def draw_loop(): #loop
     draw_background_colour()
-    draw_text_centered( 'YAW : ' + str(round(math.degrees(airplane_data['yaw']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
-    draw_text_centered( 'ROLL : ' + str(round(math.degrees(airplane_data['roll']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
-    draw_text_centered( 'PITCH : ' + str(round(math.degrees(airplane_data['pitch']), 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
+    draw_text_centered( 'YAW : ' + str(round(airplane_data['yaw'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
+    draw_text_centered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
+    draw_text_centered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
     draw_text_centered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
 
     mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -251,7 +275,7 @@ def draw_loop(): #loop
     #print(input_commands['elevator'], input_commands['aileron'])
     draw_control_square()
     draw_control_handle()
-    draw_adi()
+    draw_adi(airplane_data['roll'], airplane_data['pitch'])
     draw_menu()
     draw_buttons()
   
