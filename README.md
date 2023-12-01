@@ -9,7 +9,7 @@ Wing
   Flaps TMS, RCS failsafe
   Aileron RCS
 
-# _DOCUMENDATION:_
+# _DOCUMENDATION:
 There are a few important files in this main ground control repository.
 \project directory contains the main project, with the master script being main.py.
 window_drawing.py is imported with functions for draw loops.
