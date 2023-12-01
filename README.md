@@ -9,13 +9,15 @@ Wing
   Flaps TMS, RCS failsafe
   Aileron RCS
 
-#DOCUMENDATION:
+# _DOCUMENDATION:_
 There are a few important files in this main ground control repository.
 \project directory contains the main project, with the master script being main.py.
 window_drawing.py is imported with functions for draw loops.
 global_var.py is a master script to bridge across Group 17 and 18's work. That is where Group 18 should feed in their data.
 
 In the future, PID should feed in their controller outputs at main.py for cleanness sake.
+
+## Code Explanation
 
 First of all, we need to set up the port in main.py.
 Below is the port for SITL:
@@ -75,4 +77,4 @@ And the second method being sending a manual control message which overrides the
 ```
 
 The UI script is rather straightforward and does not involve complex logics such as on the main mavlink script which needs a lot of care.
-#Ivan feel free to do your doc below
+# Ivan feel free to do your doc below
