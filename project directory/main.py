@@ -25,7 +25,7 @@ print("Heartbeat from system (system %u component %u)" % (connection.target_syst
 mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
                 mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA]
 
-refresh_rate_global = 500
+refresh_rate_global = 30
 
 # Refresh rate request
 for i in range(len(mav_commands)):
@@ -89,5 +89,3 @@ while True:
     #set_servo(3, 1500 + 500*math.sin(time.time()))
     window_drawing.draw_loop()
     window_drawing.pygame_functions()
-
-    time.sleep(0.001)
