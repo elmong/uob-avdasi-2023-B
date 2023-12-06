@@ -26,7 +26,7 @@ port='tcp:127.0.0.1:5762'
 ```
 And this is the port for cubeorange via wifi:
 ```python
-ELMO FIXME INSERT THE CORRECT PORT FOR CUBE OVER WIFI, 0.0.0.0.something
+0.0.0.0.14550
 ```
 
 Then, we request establishment of a datastream via the following functions:
