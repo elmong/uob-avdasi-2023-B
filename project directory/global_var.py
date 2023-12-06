@@ -18,4 +18,5 @@ input_commands = {
     'fd_on' : False,
     'ap_on' : False,
     'fd_pitch': 0,
+    'armed' : False,
 }

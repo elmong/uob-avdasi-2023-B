@@ -12,7 +12,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 pygame.init()
 SCREEN_WIDTH = 1920
 SREEN_HEIGHT = 1080
-screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
 
@@ -114,7 +114,7 @@ class ToggleButton(Button):
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], "PID TUNING")
-button_1 = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 1")
+arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "ARM VEHICLE", callback = lambda: input_commands.update(armed=not input_commands['armed']))
 button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 2")
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
 button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
@@ -246,7 +246,7 @@ def draw_buttons():
     for button in Button.instances:
         button.draw()
 
-def pygame_functions():
+def pygame_update_loop():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
@@ -269,7 +269,7 @@ def pygame_functions():
     GET_DELTA_TIME() # should come before anything else
     update_mouse_control()
 
-def draw_loop(): #loop
+def pygame_draw_loop(): #loop
     draw_background_colour()
     draw_text_centered( 'YAW : ' + str(round(airplane_data['yaw'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
     draw_text_centered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
