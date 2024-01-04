@@ -22,6 +22,7 @@ fonts = {
     'dbxl': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 32),
     'dbxl_title': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 20),
     'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60),
+    'dbxl_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 15),
 
 }
 
@@ -214,6 +215,15 @@ def draw_adi(roll, pitch, pitch_bar):
 def draw_menu():
     draw_line((0, 112), (1920, 112), 3, colours['pearl'])
 
+def draw_refresh_rate():
+    rate = airplane_data['refresh_rate']
+    if rate > 25:
+        pygame.draw.rect(screen, colours['green_blue'], (20,96,min(rate, 190),7))
+        draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['green_blue'], 20, 80)
+    else:
+        pygame.draw.rect(screen, colours['red'], (20,96,min(rate, 190),7))
+        draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
+
 mouse_attached_to_ctrl = False
 elevator_damper = math_helpers.SmoothDamp() #init the instances
 aileron_damper = math_helpers.SmoothDamp()
@@ -268,13 +278,15 @@ def pygame_update_loop():
 
     GET_DELTA_TIME() # should come before anything else
     update_mouse_control()
-
+    
 def pygame_draw_loop(): #loop
     draw_background_colour()
-    draw_text_centered( 'YAW : ' + str(round(airplane_data['yaw'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
-    draw_text_centered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
-    draw_text_centered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
-    draw_text_centered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
+
+    # previously for testing
+    # draw_text_centered( 'YAW : ' + str(round(airplane_data['yaw'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
+    # draw_text_centered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
+    # draw_text_centered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
+    # draw_text_centered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
 
     mouse_x, mouse_y = pygame.mouse.get_pos()
     for button in Button.instances:
@@ -285,5 +297,6 @@ def pygame_draw_loop(): #loop
     draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
     draw_menu()
     draw_buttons()
+    draw_refresh_rate()
   
     pygame.display.update()
