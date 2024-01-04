@@ -14,10 +14,10 @@ import window_drawing
 
 ################################
 
-TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = False
+TESTING_ON_SIM = False
+TESTING_GRAPHICS_ONLY = True
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
-DATA_REFRESH_RATE_GLOBAL = 40
+DATA_REFRESH_RATE_GLOBAL = 30
 
 ################################
 
@@ -49,7 +49,16 @@ def set_servo(connection, enum, pwm_val): ## if you want to use this, remove the
 
 ################################ THE INITIALISATION STUFF
 
-connection_established = False
+window_drawing.draw_bad_screen()
+
+if not TESTING_GRAPHICS_ONLY:
+    connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
+    connection.wait_heartbeat() #heartbeat so make sure it's connected to the flight controller
+    print("Heartbeat from system (system %u component %u)" % (connection.target_system, connection.target_component))
+    mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
+                    mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, #vfr hud stands for typical hud data on a fixed wing plane
+                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA]
+    request_refresh_rate(connection, mav_commands)
 
 ################################ LAND OF PREVIOUS VALUES
 
@@ -59,29 +68,20 @@ last_time = time.time()
 
 def update_refresh_rate():
     global last_time
-    refresh_rate = 1/(time.time() - last_time)
+    if (time.time() - last_time) > 0:
+        refresh_rate = 1/(time.time() - last_time)
+    else:
+        refresh_rate = 0
     airplane_data['refresh_rate'] = refresh_rate
     last_time = time.time()
     # if refresh_rate < 25:
     #     print("WARNING REFRESH RATE TOO LOW: " + str(int(refresh_rate)))
 
-async def mavlink_loop():
-    connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
-    connection.wait_heartbeat() #heartbeat so make sure it's connected to the flight controller
-    print("Heartbeat from system (system %u component %u)" % (connection.target_system, connection.target_component))
-    mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
-                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA]
-    request_refresh_rate(connection, mav_commands)
+def mavlink_loop():
 
-    global connection_established
-    connection_established = True
+    msg=connection.recv_match()
 
-    while True:
-
-        msg=connection.recv_match()
-
-        if not msg:
-            continue
+    if msg:
         if msg.get_type() == 'ATTITUDE': #get type of message , check mavlink inspector on missionplanner to get type.
             attitude=msg.to_dict() #extract message to dictionary
             #print(attitude)
@@ -98,43 +98,40 @@ async def mavlink_loop():
             aoa_ssa=msg.to_dict()
             airplane_data['aoa'] = aoa_ssa['AOA']
 
+        if msg.get_type() == 'VFR_HUD': #get type of message , check mavlink inspector on missionplanner to get type.
+            vfr_hud=msg.to_dict()
+            airplane_data['airspeed'] = vfr_hud['airspeed']
+
         # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
         #     sys_status=msg.to_dict()
         #     print(sys_status['drop_rate_comm'])
 
 
-        # This is working for sending commands into the sitl
-        connection.mav.manual_control_send(connection.target_system,
-            int(-input_commands['elevator'] * 1000),
-            int(input_commands['aileron'] * 1000),
-            1000, # throttle set it at full 1000 for sitl tests
-            0,
-            0
-        )
+    # This is working for sending commands into the sitl
+    connection.mav.manual_control_send(connection.target_system,
+        int(-input_commands['elevator'] * 1000),
+        int(input_commands['aileron'] * 1000),
+        1000, # throttle set it at full 1000 for sitl tests
+        0,
+        0
+    )
 
-        # Flight Director Pitch Bar
-        input_commands['fd_pitch'] = -airplane_data['pitch']
+    # Flight Director Pitch Bar
+    input_commands['fd_pitch'] = -airplane_data['pitch']
 
-        update_refresh_rate()
+    update_refresh_rate()
 
-        #set_servo(3, 1500 + 500*math.sin(time.time()))
-        await asyncio.sleep(0)
+    #set_servo(3, 1500 + 500*math.sin(time.time()))
 
-async def pygame_loop():
-    while True:
-        window_drawing.pygame_draw_loop()
-        window_drawing.pygame_update_loop()
-        if not connection_established and not TESTING_GRAPHICS_ONLY:
-            window_drawing.draw_bad_screen()
-        await asyncio.sleep(0)
+def pygame_loop():
+    window_drawing.pygame_draw_loop()
+    window_drawing.pygame_update_loop()
 
-async def main():
-    task1 = asyncio.create_task(pygame_loop())
+while True:
+
     if TESTING_GRAPHICS_ONLY:
-        await asyncio.gather(task1,)
+        pygame_loop()
     else:
-        task2 = asyncio.create_task(mavlink_loop())
-        await asyncio.gather(task1, task2)
+        mavlink_loop()
+        pygame_loop()
 
-# Run the asyncio event loop
-asyncio.run(main())

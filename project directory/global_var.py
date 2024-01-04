@@ -8,6 +8,7 @@ airplane_data = {
     'yaw': 0,
     'yaw_rate': 0,
     'aoa': 0,
+    'airspeed': 0,
     'refresh_rate': 0,
 }
     

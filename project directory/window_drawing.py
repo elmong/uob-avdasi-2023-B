@@ -18,26 +18,29 @@ pygame.display.set_caption('Company B Avionics Suite')
 
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
-    'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 32),
+    'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
+    'helvetica_bold': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
     'dbxl': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 32),
     'dbxl_title': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 20),
     'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60),
     'dbxl_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 15),
 
 }
+fonts['helvetica_bold'].set_bold(True)
 
 textures = {
     'horizon': pygame.image.load(os.path.join(root_path, 'textures', 'horizon.png')).convert_alpha(),
-    'wing': pygame.image.load(os.path.join(root_path, 'textures', 'wing.png')).convert_alpha()
+    'wing': pygame.image.load(os.path.join(root_path, 'textures', 'wing.png')).convert_alpha(),
+    'icon': pygame.image.load(os.path.join(root_path, 'textures', 'company_b_logo.png')).convert_alpha(),
 }
-
-fonts['helvetica'].set_bold(True)
+pygame.display.set_icon(textures['icon'])
 
 colours = {
     'white' : (255,255,255),
     'black' : (0  ,0  ,0  ),
     'bgd'   : (1  ,17 ,21 ),
     'pearl' : (247,255,228),
+    'pearl_grey' : (247/2,255/2,228/2),
     'red'   : (255,102,95 ),
     'green'   : (130,245,174 ),
     'light_blue'   : (154,255,255 ),
@@ -67,10 +70,10 @@ class Button:
     def draw(self):
         draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
         if self.text_row2:
-            draw_text_centered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 20)
-            draw_text_centered(self.text_row2, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2)
+            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 20)
+            draw_text_xcentered(self.text_row2, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2)
         else:
-            draw_text_centered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
     
@@ -99,10 +102,10 @@ class ToggleButton(Button):
             pygame.draw.rect(screen, colours['green_blue'], (self.x + 3 ,self.y + 3, self.width - 5, self.height - 5))
     
         if self.text_row2:
-            draw_text_centered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 20)
-            draw_text_centered(self.text_row2, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2)
+            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 20)
+            draw_text_xcentered(self.text_row2, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2)
         else:
-            draw_text_centered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
             
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
@@ -136,14 +139,28 @@ def draw_line(coord_1, coord_2, width, colour):
     pygame.draw.line(screen, colour, coord_1, coord_2, width)
 
 def draw_text(text, font, colour, x, y):
+    text = str(text)
     text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
     img = font.render(text, True, colour)
     screen.blit(img, (x, y))
+
+def draw_text_right(text, font, colour, x, y):
+    text = str(text)
+    text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
+    img = font.render(text, True, colour)
+    screen.blit(img, (x - img.get_width(), y))
                 
-def draw_text_centered(text, font, colour, x, y):
+def draw_text_xcentered(text, font, colour, x, y):
+    text = str(text)
     text = text.replace('-', '\u2212')
     img = font.render(text, True, colour)
     screen.blit(img, (x - img.get_width()/2, y))
+
+def draw_text_ycentered(text, font, colour, x, y):
+    text = str(text)
+    text = text.replace('-', '\u2212')
+    img = font.render(text, True, colour)
+    screen.blit(img, (x , y - img.get_height()/2))
 
 def draw_rectangle(x, y, width, height, colour, line_width):
     pygame.draw.line(screen, colour, (x, y), (x+width, y), line_width)
@@ -159,7 +176,8 @@ def draw_image_centered_rotated(img, x, y, angle_deg):
     screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
 
 def draw_background_colour():
-    pygame.draw.rect(screen, colours['bgd'], (0,0,1920,1080))
+    w, h = pygame.display.get_surface().get_size()
+    pygame.draw.rect(screen, colours['bgd'], (0,0,w,h))
 
 def draw_bad_screen():
     draw_background_colour()
@@ -167,8 +185,8 @@ def draw_bad_screen():
     pygame.draw.line(screen, colours['red'], (102, 1080-978), (709, 1080-627), 4)
     pygame.draw.line(screen, colours['red'], (1920-102, 978), (1920-709, 627), 4)
     pygame.draw.line(screen, colours['red'], (1920-102, 1080-978), (1920-709, 1080-627), 4)
-    draw_text_centered( 'NO   ACTIVE', fonts['dbxl_massive'], colours['red'], 1920/2, 1080/2 - 70)
-    draw_text_centered( 'CONNECTION', fonts['dbxl_massive'], colours['red'], 1920/2, 1080/2)
+    draw_text_xcentered( 'NO   ACTIVE', fonts['dbxl_massive'], colours['red'], 1920/2, 1080/2 - 70)
+    draw_text_xcentered( 'CONNECTION', fonts['dbxl_massive'], colours['red'], 1920/2, 1080/2)
 
     pygame.display.update() # called once only
 
@@ -180,21 +198,21 @@ def draw_control_handle():
     y = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), input_commands['elevator']/cursor_ctrl_boost_factor)
     offsets = 3
     line_length = 14
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 3)
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets , y + offsets + line_length), 3)
+    pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 2)
+    pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets , y + offsets + line_length), 2)
 
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets - line_length, y + offsets), 3)
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets , y + offsets + line_length), 3)
+    pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets - line_length, y + offsets), 2)
+    pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets , y + offsets + line_length), 2)
 
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets + line_length, y - offsets), 3)
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets , y - offsets - line_length), 3)
+    pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets + line_length, y - offsets), 2)
+    pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets , y - offsets - line_length), 2)
 
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 3)
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 3)
+    pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 2)
+    pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 2)
 
 
 def draw_adi(roll, pitch, pitch_bar):
-    draw_rectangle(220, 319, 464, 464, colours['light_blue'], 3)
+    draw_rectangle(220, 319, 464, 464, colours['light_blue'], 2)
     pitch_px_per_deg = 507/80 # 503 px for 80 degrees pitch
     x = 220+464/2
     y = 319+464/2
@@ -212,8 +230,37 @@ def draw_adi(roll, pitch, pitch_bar):
         fd_y = math_helpers.clamper( y - pitch_bar * pitch_px_per_deg, y-fd_size, y+fd_size)
         pygame.draw.line(screen, colours['green'], (x-fd_size, fd_y), (x+fd_size, fd_y), 3)
 
+spd_damper = math_helpers.SmoothDamp()
+prev_spd = 0
+def draw_spd_tape(spd):
+    # the frame
+    draw_line((80, 320), (180, 320), 2, colours['light_blue'])
+    draw_line((157, 320), (157, 783), 2, colours['light_blue'])
+    draw_line((80, 783), (180, 783), 2, colours['light_blue'])
+
+    global prev_spd
+    spd = spd_damper.smooth_damp(prev_spd, spd, 0.07, 10, DELTA_TIME)
+    prev_spd = spd
+    
+    # the tape
+    screen.set_clip((80, 320), (180-80, 783-320))
+    center_y = (320 + 783)/2
+    px_per_ms = 100
+    spd_offset = spd * px_per_ms
+    loop_start = -4 + int(spd)
+    loop_end = 4 + int(spd)
+    for i in range(loop_start, loop_end):
+        y_coord = center_y - i * px_per_ms + spd_offset
+        draw_text_right(str(i).zfill(2), fonts['helvetica'], colours['pearl'], 130, y_coord - 15)
+        pygame.draw.rect(screen, colours['pearl'], (140,y_coord-1,17,2))
+        for j in range(4):
+            pygame.draw.rect(screen, colours['pearl_grey'], (145,y_coord-1 - (j+1) * px_per_ms/5,12,2))
+    draw_line((145, center_y-2), (180, center_y-2), 5, colours['green_blue'])
+    screen.set_clip(None)
+
 def draw_menu():
-    draw_line((0, 112), (1920, 112), 3, colours['pearl'])
+    w, h = pygame.display.get_surface().get_size()
+    draw_line((0, 112), (w, 112), 3, colours['pearl'])
 
 def draw_refresh_rate():
     rate = airplane_data['refresh_rate']
@@ -283,10 +330,10 @@ def pygame_draw_loop(): #loop
     draw_background_colour()
 
     # previously for testing
-    # draw_text_centered( 'YAW : ' + str(round(airplane_data['yaw'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
-    # draw_text_centered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
-    # draw_text_centered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
-    # draw_text_centered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
+    # draw_text_xcentered( 'YAW : ' + str(round(airplane_data['yaw'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2)
+    # draw_text_xcentered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
+    # draw_text_xcentered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
+    # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
 
     mouse_x, mouse_y = pygame.mouse.get_pos()
     for button in Button.instances:
@@ -295,6 +342,7 @@ def pygame_draw_loop(): #loop
     draw_control_square()
     draw_control_handle()
     draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
+    draw_spd_tape(airplane_data['airspeed'])
     draw_menu()
     draw_buttons()
     draw_refresh_rate()
