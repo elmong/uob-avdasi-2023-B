@@ -19,6 +19,8 @@ pygame.display.set_caption('Company B Avionics Suite')
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
     'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
+    'helvetica_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 22),
+    'helvetica_supersmall': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 12),
     'helvetica_bold': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
     'dbxl': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 32),
     'dbxl_title': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 20),
@@ -55,7 +57,7 @@ cursor_ctrl_boost_factor = 1.05 # cursor_ctrl_boost_factor for aesthetics, so th
 
 class Button:
     instances = []
-    def __init__(self, x, y, width, height, colour, text_row1, text_row2=None, callback = None):
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None):
         Button.instances.append(self)
         self.x = x
         self.y = y
@@ -66,14 +68,15 @@ class Button:
         self.text_row2 = text_row2
         self.is_hovered = False
         self.callback = callback
+        self.font = font
     
     def draw(self):
         draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
         if self.text_row2:
-            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 20)
-            draw_text_xcentered(self.text_row2, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2)
+            draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            draw_text_centered(self.text_row2, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 + 10)
         else:
-            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2)
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
     
@@ -91,8 +94,8 @@ class Button:
             self.callback()
 
 class ToggleButton(Button):
-    def __init__(self, x, y, width, height, colour, text_row1, text_row2=None, callback = None):
-        super().__init__( x, y, width, height, colour, text_row1, text_row2, callback)
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None):
+        super().__init__( x, y, width, height, colour, font, text_row1, text_row2, callback)
         self.state = False
     def draw(self):
         draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
@@ -102,10 +105,10 @@ class ToggleButton(Button):
             pygame.draw.rect(screen, colours['green_blue'], (self.x + 3 ,self.y + 3, self.width - 5, self.height - 5))
     
         if self.text_row2:
-            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 20)
-            draw_text_xcentered(self.text_row2, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2)
+            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            draw_text_centered(self.text_row2, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 + 10)
         else:
-            draw_text_xcentered(self.text_row1, fonts['dbxl_title'], text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
+            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2)
             
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
@@ -114,15 +117,48 @@ class ToggleButton(Button):
         if self.is_hovered:
             self.state = not self.state # change the status of the button
             super().actuate() # at the same time toggle a function
+    def force_state(self, state):
+        self.state = state
+
+class SetFlaps():
+    def __init__(self):
+        pass
+    def to(self):
+        input_commands['flap_setting'] = 1
+        flaps_up_button.force_state(False)
+        flaps_to_button.force_state(True)
+        flaps_ld_button.force_state(False)
+    def ldg(self):
+        input_commands['flap_setting'] = 2
+        flaps_up_button.force_state(False)
+        flaps_to_button.force_state(False)
+        flaps_ld_button.force_state(True)
+    def up(self):
+        input_commands['flap_setting'] = 0
+        flaps_up_button.force_state(True)
+        flaps_to_button.force_state(False)
+        flaps_ld_button.force_state(False)
+setflaps = SetFlaps()
 
 ############ The land of button creation
-quit_button = Button(1704, 0, 122, 64, colours['red'], "QUIT", callback=lambda: quit())
-pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], "PID TUNING")
-arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "ARM VEHICLE")
-button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 2")
-button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
-button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
-fd_button = ToggleButton(155, 910, 120, 68, colours['pearl'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
+quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
+pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
+arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM VEHICLE")
+button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 2")
+button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 4")
+button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 4")
+fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
+ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT") 
+
+data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING") 
+
+flaps_up_button = ToggleButton(250, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "UP", callback = setflaps.up) 
+flaps_to_button = ToggleButton(250 + 75 + 5, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "TO", callback = setflaps.to) 
+flaps_ld_button = ToggleButton(250 + 75 * 2 + 10, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "LG", callback = setflaps.ldg) 
+flaps_up_button.force_state(True) # by default is up
+
+page_fwd_button = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
+page_fwd_button = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
 
 ############  I love OOP
 
@@ -138,7 +174,9 @@ def GET_DELTA_TIME():
 def draw_line(coord_1, coord_2, width, colour):
     pygame.draw.line(screen, colour, coord_1, coord_2, width)
 
-def draw_text(text, font, colour, x, y):
+################
+
+def draw_text(text, font, colour, x, y): # TODO The alignment should be grouped into a param
     text = str(text)
     text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
     img = font.render(text, True, colour)
@@ -161,6 +199,14 @@ def draw_text_ycentered(text, font, colour, x, y):
     text = text.replace('-', '\u2212')
     img = font.render(text, True, colour)
     screen.blit(img, (x , y - img.get_height()/2))
+
+def draw_text_centered(text, font, colour, x, y):
+    text = str(text)
+    text = text.replace('-', '\u2212')
+    img = font.render(text, True, colour)
+    screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
+
+################
 
 def draw_rectangle(x, y, width, height, colour, line_width):
     pygame.draw.line(screen, colour, (x, y), (x+width, y), line_width)
@@ -228,7 +274,18 @@ def draw_adi(roll, pitch, pitch_bar):
     if input_commands['fd_on']:
         fd_size = 132
         fd_y = math_helpers.clamper( y - pitch_bar * pitch_px_per_deg, y-fd_size, y+fd_size)
+        pygame.draw.line(screen, colours['bgd'], (x-fd_size-1, fd_y), (x+fd_size+1, fd_y), 5)
         pygame.draw.line(screen, colours['green'], (x-fd_size, fd_y), (x+fd_size, fd_y), 3)
+
+def draw_log_sys():
+    draw_rectangle(510, 825, 1182-510, 1000-825, colours['light_blue'], 2)
+    draw_line((510, 825+30), (1182, 825+30), 2, colours['light_blue'])
+    pygame.draw.rect(screen, colours['light_blue'], (510,825,30,30))
+    draw_text("LOGGING SYSTEM", fonts['helvetica_small'], colours['pearl'], 550, 827)
+    # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
+
+def draw_ctrl_diag():
+    draw_rectangle(1225, 540, 1860-1225, 1000-540, colours['light_blue'], 2)
 
 spd_damper = math_helpers.SmoothDamp()
 prev_spd = 0
@@ -240,27 +297,45 @@ def draw_spd_tape(spd):
 
     global prev_spd
     spd = spd_damper.smooth_damp(prev_spd, spd, 0.07, 10, DELTA_TIME)
+    spd_trend = (spd - prev_spd)/DELTA_TIME
     prev_spd = spd
-    
+
     # the tape
-    screen.set_clip((80, 320), (180-80, 783-320))
+    screen.set_clip((80, 322), (180-80, 783-322))
     center_y = (320 + 783)/2
-    px_per_ms = 100
+    px_per_ms = 50
     spd_offset = spd * px_per_ms
-    loop_start = -4 + int(spd)
-    loop_end = 4 + int(spd)
+    loop_start = -7 + int(spd)
+    loop_end = 7 + int(spd)
     for i in range(loop_start, loop_end):
-        y_coord = center_y - i * px_per_ms + spd_offset
-        draw_text_right(str(i).zfill(2), fonts['helvetica'], colours['pearl'], 130, y_coord - 15)
+        y_coord = center_y - i * px_per_ms + spd_offset - 1
+        if i%2 == 0:
+            if i >= 0:
+                draw_text_right(str(i).zfill(2), fonts['helvetica'], colours['pearl'], 125, y_coord - 15)
+            else:
+                draw_text_right(str(i).zfill(3), fonts['helvetica'], colours['pearl'], 125, y_coord - 15)
         pygame.draw.rect(screen, colours['pearl'], (140,y_coord-1,17,2))
         for j in range(4):
             pygame.draw.rect(screen, colours['pearl_grey'], (145,y_coord-1 - (j+1) * px_per_ms/5,12,2))
     draw_line((145, center_y-2), (180, center_y-2), 5, colours['green_blue'])
     screen.set_clip(None)
 
+    #speed trend
+    if abs(spd_trend) > 0.5:
+        trend_tip_y = center_y - 30 * spd_trend
+        trend_tip_y = math_helpers.clamper(trend_tip_y, 320, 783)
+        draw_line((169, center_y), (169, trend_tip_y), 2, colours['green'])
+        if spd_trend < 0:
+            draw_line((169, trend_tip_y), (169-6, trend_tip_y-12), 2, colours['green'])
+            draw_line((169, trend_tip_y), (169+6, trend_tip_y-12), 2, colours['green'])
+        else:
+            draw_line((169, trend_tip_y), (169-6, trend_tip_y+12), 2, colours['green'])
+            draw_line((169, trend_tip_y), (169+6, trend_tip_y+12), 2, colours['green'])
+
 def draw_menu():
     w, h = pygame.display.get_surface().get_size()
     draw_line((0, 112), (w, 112), 3, colours['pearl'])
+    draw_text_xcentered('SYSTEM MENU ACCESS', fonts['dbxl_small'], colours['pearl'], 1920/2, 92)
 
 def draw_refresh_rate():
     rate = airplane_data['refresh_rate']
@@ -343,8 +418,11 @@ def pygame_draw_loop(): #loop
     draw_control_handle()
     draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
     draw_spd_tape(airplane_data['airspeed'])
+    #draw_spd_tape(12*math.sin(time.time()/2))
     draw_menu()
-    draw_buttons()
     draw_refresh_rate()
+    draw_log_sys()
+    draw_ctrl_diag()
+    draw_buttons()
   
     pygame.display.update()
