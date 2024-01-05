@@ -118,7 +118,7 @@ class ToggleButton(Button):
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], "PID TUNING")
-arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "ARM VEHICLE", callback = lambda: input_commands.update(armed=not input_commands['armed']))
+arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "ARM VEHICLE")
 button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 2")
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
 button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], "BUTTON 4")
