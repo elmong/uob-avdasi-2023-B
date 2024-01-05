@@ -18,6 +18,7 @@ TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = True
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30
+SUICIDE = False
 
 ################################
 
@@ -128,6 +129,38 @@ def pygame_loop():
     window_drawing.pygame_update_loop()
 
 while True:
+
+    if SUICIDE:
+        print('\x1b[6;37;41m' + '''
+                                                            
+                                                            
+                NO!                            MNO!         
+                MNO!!                         MNNOO!        
+               MMNO!                           MNNOO!!      
+             MNOONNOO!   MMMMMMMMMMPPPOII!   MNNO!!!!       
+             !O! NNO! MMMMMMMMMMMMMPPPOOOII!! NO!           
+                   ! MMMMMMMMMMMMMPPPPOOOOIII! !            
+                    MMMMMMMMMMMMPPPPPOOOOOOII!!             
+                    MMMMMOOOOOOPPPPPPPPOOOOMII!             
+                    MMMMM      OPPMMP     ,OMI!             
+                    MMMM::   o ,OPMP, o   ::I!!             
+                      NNM::: ,,OOPM!P, ::::!!               
+                     MMNNNNNOOOOPMO!!IIPPO!!O!              
+                     MMMMMNNNNOO:!!:!!IPPPPOO!              
+                      MMMMMNNOOMMNNIIIPPPOO!!               
+                         MMMONNMMNNNIIIOO!                  
+                       MN MOMMMNNNIIIIIO! OO                
+                      MNO! IiiiiiiiiiiiI OOOO               
+                 NNN MNO!   O!!!!!!!!!O   OONO NO!          
+                MNNNNNO!    OOOOOOOOOOO    MMNNON!          
+                  MNNNNO!    PPPPPPPPP    MMNON!            
+                     OO!                   ON!              
+                                                            
+                     YOUR SCRIPT IS BROKEN                  
+                    CONTACT HENRICK KU GP17                 
+                                                            
+            ''' + '\x1b[0m')
+        quit()
 
     if TESTING_GRAPHICS_ONLY:
         pygame_loop()
