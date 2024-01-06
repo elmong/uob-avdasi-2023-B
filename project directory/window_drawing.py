@@ -236,6 +236,17 @@ def draw_bad_screen():
 
     pygame.display.update() # called once only
 
+def draw_init_screen():
+    draw_background_colour()
+    pygame.draw.line(screen, colours['green_blue'], (102, 978), (709, 627), 4)
+    pygame.draw.line(screen, colours['green_blue'], (102, 1080-978), (709, 1080-627), 4)
+    pygame.draw.line(screen, colours['green_blue'], (1920-102, 978), (1920-709, 627), 4)
+    pygame.draw.line(screen, colours['green_blue'], (1920-102, 1080-978), (1920-709, 1080-627), 4)
+    draw_text_xcentered( 'WAITING   FOR', fonts['dbxl_massive'], colours['pearl'], 1920/2, 1080/2 - 70)
+    draw_text_xcentered( 'INITIALISATION', fonts['dbxl_massive'], colours['pearl'], 1920/2, 1080/2)
+
+    pygame.display.update() # called once only
+
 def draw_control_square():
     draw_rectangle(cursor_ctrl_box_x, cursor_ctrl_box_y, cursor_ctrl_side_length, cursor_ctrl_side_length, colours['pearl'], 2)
 
