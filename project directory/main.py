@@ -18,7 +18,7 @@ TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
-DATA_REFRESH_RATE_GLOBAL = 30
+DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 SUICIDE = False
 
 ################################
@@ -129,12 +129,31 @@ def update_refresh_rate():
     #     print("WARNING REFRESH RATE TOO LOW: " + str(int(refresh_rate)))
 
 def fetch_messages_and_update():
-    try:
-    
-        attitude = connection.recv_match(type = 'ATTITUDE').to_dict() #extract message to dictionary
-        #print(attitude)
 
-        #extract value from dictionary : so 'roll', 'pitch', 'yaw'
+    ################## WARNING ##################
+    # Do NOT do: 
+    #
+    #   msg=connection.recv_match() 
+    #   if msg:
+    #       if msg.get_type() == 'ATTITUDE': 
+    #           attitude=msg.to_dict() 
+    #
+    # That way you are fetching the entire message then filtering. The message is massive
+    # and will NOT run at 30Hz. 
+    # For 30Hz or even 60Hz, EXTRACT NEEDED DATA ONLY!
+    #
+    # attitude = connection.recv_match(type = 'ATTITUDE')
+    # if attitude is not None:
+    #   attitude = attitude.to_dict()
+    #
+    # This will guarantee 1. Only needed stuff is requested, and 2. If messgae not received
+    # just move on to the pygame loop to keep the fps.
+
+    attitude = connection.recv_match(type = 'ATTITUDE') #extract message to dictionary
+    #print(attitude)
+    if attitude is not None:
+        attitude = attitude.to_dict()
+    #extract value from dictionary : so 'roll', 'pitch', 'yaw'
         airplane_data['pitch'] = math.degrees(attitude['pitch'])
         airplane_data['pitch_rate'] = math.degrees(attitude['pitchspeed'])
         airplane_data['roll'] = math.degrees(attitude['roll'])
@@ -142,21 +161,21 @@ def fetch_messages_and_update():
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
 
-        aoa_ssa = connection.recv_match(type = 'AOA_SSA').to_dict()
+    aoa_ssa = connection.recv_match(type = 'AOA_SSA')
+    if aoa_ssa is not None:
+        aoa_ssa = aoa_ssa.to_dict()
         airplane_data['aoa'] = aoa_ssa['AOA']
 
-        vfr_hud = connection.recv_match(type = 'VFR_HUD').to_dict()
+    vfr_hud = connection.recv_match(type = 'VFR_HUD')
+    if vfr_hud is not None:
+        vfr_hud = vfr_hud.to_dict()
         airplane_data['airspeed'] = vfr_hud['airspeed']
 
-        # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
-        #     sys_status=msg.to_dict()
-        #     print(sys_status['drop_rate_comm'])
+    # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
+    #     sys_status=msg.to_dict()
+    #     print(sys_status['drop_rate_comm'])
 
-        input_commands['fd_pitch'] = -airplane_data['pitch']
-
-    except Exception as e:
-        print("Error : {e}")
-        #print("CONNECTION LOST!")
+    input_commands['fd_pitch'] = -airplane_data['pitch']
 
 def flight_controller():
     flap_angle = (input_commands['flap_setting']-1)

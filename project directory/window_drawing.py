@@ -307,7 +307,7 @@ def draw_spd_tape(spd):
     draw_line((80, 783), (180, 783), 2, colours['light_blue'])
 
     global prev_spd
-    spd = spd_damper.smooth_damp(prev_spd, spd, 0.07, 10, DELTA_TIME)
+    spd = spd_damper.smooth_damp(prev_spd, spd, 0.5, 50, DELTA_TIME)
     spd_trend = (spd - prev_spd)/DELTA_TIME
     prev_spd = spd
 
@@ -332,7 +332,7 @@ def draw_spd_tape(spd):
     screen.set_clip(None)
 
     #speed trend
-    if abs(spd_trend) > 0.5:
+    if abs(spd_trend) > 0.2:
         trend_tip_y = center_y - 30 * spd_trend
         trend_tip_y = math_helpers.clamper(trend_tip_y, 320, 783)
         draw_line((169, center_y), (169, trend_tip_y), 2, colours['green'])
