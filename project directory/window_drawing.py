@@ -6,6 +6,7 @@ import math_helpers
 
 from global_var import airplane_data
 from global_var import input_commands
+from global_var import ui_commands
 
 root_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -39,6 +40,7 @@ pygame.display.set_icon(textures['icon'])
 
 colours = {
     'white' : (255,255,255),
+    'grey'  : (255/2,255/2,255/2),
     'black' : (0  ,0  ,0  ),
     'bgd'   : (1  ,17 ,21 ),
     'pearl' : (247,255,228),
@@ -150,7 +152,7 @@ button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbx
 fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
 ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT") 
 
-data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING") 
+data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING", callback = lambda: ui_commands.update(logging=not ui_commands['logging'])) 
 
 flaps_up_button = ToggleButton(250, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "UP", callback = setflaps.up) 
 flaps_to_button = ToggleButton(250 + 75 + 5, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "TO", callback = setflaps.to) 
@@ -187,6 +189,12 @@ def draw_text_right(text, font, colour, x, y):
     text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
     img = font.render(text, True, colour)
     screen.blit(img, (x - img.get_width(), y))
+    
+def draw_text_right_ycentered(text, font, colour, x, y):
+    text = str(text)
+    text = text.replace('-', '\u2212') # Unicodes of negative sign is not handled properly
+    img = font.render(text, True, colour)
+    screen.blit(img, (x - img.get_width(), y - img.get_height()/2))
                 
 def draw_text_xcentered(text, font, colour, x, y):
     text = str(text)
@@ -295,8 +303,78 @@ def draw_log_sys():
     draw_text("LOGGING SYSTEM", fonts['helvetica_small'], colours['pearl'], 550, 827)
     # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
 
+def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
+    draw_line((x, y+60), (x, y-60), 2, colours['pearl'])
+    draw_line((x-10, y+60), (x+10, y+60), 2, colours['pearl'])
+    draw_line((x-10, y-60), (x+10, y-60), 2, colours['pearl'])
+    draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+70)
+
+    number = '{:.2f}'.format(value)
+    y = y - arrow_ratio * 60
+    if arrow_side == 'left':
+        x = x - 4
+        draw_line((x, y), (x-20, y-11), 3, colours['green'])
+        draw_line((x, y), (x-20, y+11), 3, colours['green'])
+        draw_line((x-20, y-11), (x-20, y+11), 3, colours['green'])
+        draw_text_right_ycentered(number, fonts['dbxl_small'], colours['green'], x - 25, y)
+    elif arrow_side == 'right':
+        x = x + 4
+        draw_line((x, y), (x+20, y-11), 3, colours['green'])
+        draw_line((x, y), (x+20, y+11), 3, colours['green'])
+        draw_line((x+20, y-11), (x+20, y+11), 3, colours['green'])
+        draw_text_ycentered(number, fonts['dbxl_small'], colours['green'], x + 25, y)
+
+def draw_control_bar_hori(x, y, arrow_side, arrow_ratio, text, value):
+    draw_line((x-60, y), (x+60, y), 2, colours['pearl'])
+    draw_line((x-60, y-10), (x-60, y+10), 2, colours['pearl'])
+    draw_line((x+60, y-10), (x+60, y+10), 2, colours['pearl'])
+    draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+55)
+
+    number = '{:.2f}'.format(value)
+    x = x + arrow_ratio * 60
+    if arrow_side == 'up':
+        y = y - 4
+        draw_line((x, y), (x-11, y-20), 3, colours['green'])
+        draw_line((x, y), (x+11, y-20), 3, colours['green'])
+        draw_line((x-11, y-20), (x+11, y-20), 3, colours['green'])
+        draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y-25)
+    elif arrow_side == 'down':
+        y = y + 4
+        draw_line((x, y), (x-11, y+20), 3, colours['green'])
+        draw_line((x, y), (x+11, y+20), 3, colours['green'])
+        draw_line((x-11, y+20), (x+11, y+20), 3, colours['green'])
+        draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y+25)
+    
 def draw_ctrl_diag():
     draw_rectangle(1225, 540, 1860-1225, 1000-540, colours['light_blue'], 2)
+    draw_rectangle(1323, 569, 465, 65, colours['pearl'], 2) # wings
+
+    center_x = 1323+465/2
+
+    draw_rectangle(1335, 610, 105, 24, colours['green_blue'], 2)
+    draw_rectangle(1460, 610, 82, 24, colours['green_blue'], 2)
+
+    draw_rectangle(2*center_x-1335-105, 610, 105, 24, colours['green_blue'], 2)
+    draw_rectangle(2*center_x-1460-82, 610, 82, 24, colours['green_blue'], 2)
+    draw_line((center_x, 635), (center_x, 800), 3, colours['grey'])
+
+    draw_rectangle(1460, 800, (center_x-1460)*2, 50, colours['pearl'], 2)
+
+    draw_rectangle(1460, 830, (center_x-1460)-15, 20, colours['green_blue'], 2)
+    draw_rectangle((center_x)+15, 830, (center_x-1460)-15, 20, colours['green_blue'], 2)
+
+    draw_line((center_x, 800), (center_x, 825), 3, colours['pearl'])
+
+    draw_line((center_x, 825), (center_x, 855), 5, colours['green_blue'])
+
+    test_val = math.sin(time.time())
+
+    draw_control_bar_vert(1353, 735, 'left', test_val, 'L AIL', test_val)
+    draw_control_bar_vert(2*center_x-1353, 735, 'right', test_val, 'R AIL', test_val)
+    draw_control_bar_vert(1415, 895, 'left', test_val, 'L ELEV', test_val)
+    draw_control_bar_vert(2*center_x-1415, 895, 'right', test_val, 'R ELEV', test_val)
+
+    draw_control_bar_hori(center_x, 900, 'down', test_val, 'RUD', test_val)
 
 spd_damper = math_helpers.SmoothDamp()
 prev_spd = 0

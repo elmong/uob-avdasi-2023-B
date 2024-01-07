@@ -22,3 +22,8 @@ input_commands = {
     'fd_pitch': 0,
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
 }
+
+ui_commands = {
+    'logging' : False,
+}
+

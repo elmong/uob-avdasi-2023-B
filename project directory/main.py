@@ -6,11 +6,16 @@ import numpy as np
 import asyncio
 import time
 import math
+import csv
+import os
 
 from global_var import airplane_data
 from global_var import input_commands
+from global_var import ui_commands
 
 import window_drawing
+
+root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
@@ -94,6 +99,37 @@ def init_values():
         set_param(connection, param_name, 70, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
         param_name = 'SERVO4_FUNCTION'
         set_param(connection, param_name, 21, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+
+def logging_to_csv(filename, *args):
+    with open(os.path.join(root_path, 'logdata', filename), 'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerow(args)
+
+saved_starttime_flag = False
+logging_start_time = 0
+filename = ''
+def mavlink_logging():
+    global saved_starttime_flag
+    global logging_start_time
+    global filename
+    if ui_commands['logging'] and not saved_starttime_flag:
+        logging_start_time = time.time()
+        saved_starttime_flag = True
+        print('Start Logging')
+        filename = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(logging_start_time)) + '.csv'
+        print(filename)
+    elif ui_commands['logging']:
+        logging_elapsed_time = time.time() - logging_start_time
+        logging_to_csv( filename,
+                        logging_elapsed_time,
+                        airplane_data['pitch'],
+                        airplane_data['roll'],
+                        airplane_data['yaw']
+                        )
+    else:
+        logging_start_time = 0
+        saved_starttime_flag = False
+        filename = ''
 
 ################################ THE INITIALISATION STUFF
 
@@ -203,43 +239,10 @@ def pygame_loop():
 
 while True:
 
-    if SUICIDE:
-        print('\x1b[6;37;41m' + '''
-                                                            
-                                                            
-                NO!                            MNO!         
-                MNO!!                         MNNOO!        
-               MMNO!                           MNNOO!!      
-             MNOONNOO!   MMMMMMMMMMPPPOII!   MNNO!!!!       
-             !O! NNO! MMMMMMMMMMMMMPPPOOOII!! NO!           
-                   ! MMMMMMMMMMMMMPPPPOOOOIII! !            
-                    MMMMMMMMMMMMPPPPPOOOOOOII!!             
-                    MMMMMOOOOOOPPPPPPPPOOOOMII!             
-                    MMMMM      OPPMMP     ,OMI!             
-                    MMMM::   o ,OPMP, o   ::I!!             
-                      NNM::: ,,OOPM!P, ::::!!               
-                     MMNNNNNOOOOPMO!!IIPPO!!O!              
-                     MMMMMNNNNOO:!!:!!IPPPPOO!              
-                      MMMMMNNOOMMNNIIIPPPOO!!               
-                         MMMONNMMNNNIIIOO!                  
-                       MN MOMMMNNNIIIIIO! OO                
-                      MNO! IiiiiiiiiiiiI OOOO               
-                 NNN MNO!   O!!!!!!!!!O   OONO NO!          
-                MNNNNNO!    OOOOOOOOOOO    MMNNON!          
-                  MNNNNO!    PPPPPPPPP    MMNON!            
-                     OO!                   ON!              
-                                                            
-                     YOUR SCRIPT IS BROKEN                  
-                    CONTACT HENRICK KU GP17                 
-                                                            
-            ''' + '\x1b[0m')
-        quit()
-
     if TESTING_GRAPHICS_ONLY:
         pygame_loop()
     else:
         mavlink_loop()
         pygame_loop()
-
-        
+    mavlink_logging()
 
