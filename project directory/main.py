@@ -16,6 +16,7 @@ import window_drawing
 
 TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30
 SUICIDE = False
@@ -74,14 +75,25 @@ def init_values():
     set_param(connection, 'LIM_PITCH_MAX', 9000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
     set_param(connection, 'LIM_PITCH_MIN', -9000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
     set_param(connection, 'LIM_ROLL_CD', 9000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+    set_param(connection, 'ACRO_LOCKING', 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
     
-    for i in range(1, 17):  # 16 Chanels
-        param_name = f'SERVO{i}_FUNCTION'
-        set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
-        param_name = f'SERVO{i}_MIN'
-        set_param(connection, param_name, 1000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
-        param_name = f'SERVO{i}_MAX'
-        set_param(connection, param_name, 2000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+    if TESTING_REAL_PLANE_CHANNELS:
+        for i in range(1, 17):  # 16 Chanels
+            param_name = f'SERVO{i}_FUNCTION'
+            set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+            param_name = f'SERVO{i}_MIN'
+            set_param(connection, param_name, 1000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+            param_name = f'SERVO{i}_MAX'
+            set_param(connection, param_name, 2000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+    else:
+        param_name = 'SERVO1_FUNCTION'
+        set_param(connection, param_name, 4, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+        param_name = 'SERVO2_FUNCTION'
+        set_param(connection, param_name, 19, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+        param_name = 'SERVO3_FUNCTION'
+        set_param(connection, param_name, 70, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+        param_name = 'SERVO4_FUNCTION'
+        set_param(connection, param_name, 21, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
 
 ################################ THE INITIALISATION STUFF
 
@@ -96,7 +108,8 @@ if not TESTING_GRAPHICS_ONLY:
     request_refresh_rate(connection, mav_commands)
 
 window_drawing.draw_init_screen()
-init_values()
+if not TESTING_GRAPHICS_ONLY:
+    init_values()
 
 ################################ LAND OF PREVIOUS VALUES
 
@@ -117,54 +130,53 @@ def update_refresh_rate():
 
 def fetch_messages_and_update():
     try:
-        msg=connection.recv_match(blocking=True) ## THE BIG BLOCK BELOW IS USED TO EXTRACT DATA FROM MSG AND FEED INTO COMMON TABLE
+    
+        attitude = connection.recv_match(type = 'ATTITUDE').to_dict() #extract message to dictionary
+        #print(attitude)
 
-        if msg:
-            if msg.get_type() == 'ATTITUDE': #get type of message , check mavlink inspector on missionplanner to get type.
-                attitude=msg.to_dict() #extract message to dictionary
-                #print(attitude)
+        #extract value from dictionary : so 'roll', 'pitch', 'yaw'
+        airplane_data['pitch'] = math.degrees(attitude['pitch'])
+        airplane_data['pitch_rate'] = math.degrees(attitude['pitchspeed'])
+        airplane_data['roll'] = math.degrees(attitude['roll'])
+        airplane_data['roll_rate'] = math.degrees(attitude['rollspeed'])
+        airplane_data['yaw'] = math.degrees(attitude['yaw'])
+        airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
 
-                #extract value from dictionary : so 'roll', 'pitch', 'yaw'
-                airplane_data['pitch'] = math.degrees(attitude['pitch'])
-                airplane_data['pitch_rate'] = math.degrees(attitude['pitchspeed'])
-                airplane_data['roll'] = math.degrees(attitude['roll'])
-                airplane_data['roll_rate'] = math.degrees(attitude['rollspeed'])
-                airplane_data['yaw'] = math.degrees(attitude['yaw'])
-                airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
+        aoa_ssa = connection.recv_match(type = 'AOA_SSA').to_dict()
+        airplane_data['aoa'] = aoa_ssa['AOA']
 
-            if msg.get_type() == 'AOA_SSA': #get type of message , check mavlink inspector on missionplanner to get type.
-                aoa_ssa=msg.to_dict()
-                airplane_data['aoa'] = aoa_ssa['AOA']
+        vfr_hud = connection.recv_match(type = 'VFR_HUD').to_dict()
+        airplane_data['airspeed'] = vfr_hud['airspeed']
 
-            if msg.get_type() == 'VFR_HUD': #get type of message , check mavlink inspector on missionplanner to get type.
-                vfr_hud=msg.to_dict()
-                airplane_data['airspeed'] = vfr_hud['airspeed']
+        # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
+        #     sys_status=msg.to_dict()
+        #     print(sys_status['drop_rate_comm'])
 
-            # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
-            #     sys_status=msg.to_dict()
-            #     print(sys_status['drop_rate_comm'])
-
-            input_commands['fd_pitch'] = -airplane_data['pitch']
+        input_commands['fd_pitch'] = -airplane_data['pitch']
 
     except Exception as e:
-        # print("Error : {e}")
-        print("CONNECTION LOST!")
+        print("Error : {e}")
+        #print("CONNECTION LOST!")
 
 def flight_controller():
     flap_angle = (input_commands['flap_setting']-1)
 
-    set_servo(connection, CHANNEL_LEFT_AILERON, input_commands['aileron'])
-    set_servo(connection, CHANNEL_RIGHT_AILERON, -input_commands['aileron'])
-    set_servo(connection, CHANNEL_ELEVATOR, input_commands['elevator'])
-    set_servo(connection, CHANNEL_RUDDER, 0)
-    set_servo(connection, CHANNEL_LEFT_FLAP, flap_angle)
-    set_servo(connection, CHANNEL_RIGHT_FLAP, flap_angle)
+    if TESTING_REAL_PLANE_CHANNELS:
+        set_servo(connection, CHANNEL_LEFT_AILERON, input_commands['aileron'])
+        set_servo(connection, CHANNEL_RIGHT_AILERON, -input_commands['aileron'])
+        set_servo(connection, CHANNEL_ELEVATOR, input_commands['elevator'])
+        set_servo(connection, CHANNEL_RUDDER, 0)
+        set_servo(connection, CHANNEL_LEFT_FLAP, flap_angle)
+        set_servo(connection, CHANNEL_RIGHT_FLAP, flap_angle)
 
+msg_or_ctrl_flag = False
 def mavlink_loop():
     # Flight Director Pitch Bar
+    global msg_or_ctrl_flag
+
     fetch_messages_and_update()
-    update_refresh_rate()
     flight_controller()
+    update_refresh_rate()
 
 def pygame_loop():
     window_drawing.pygame_draw_loop()
