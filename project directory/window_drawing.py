@@ -11,8 +11,8 @@ from global_var import ui_commands
 root_path = os.path.abspath(os.path.dirname(__file__))
 
 pygame.init()
-SCREEN_WIDTH = 1920
-SREEN_HEIGHT = 1080
+SCREEN_WIDTH = 600
+SREEN_HEIGHT = 300
 screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
