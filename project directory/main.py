@@ -58,6 +58,24 @@ def set_servo(connection, enum, pwm_val): ## if you want to use this, remove the
             0, 0, 0, 0, 
             0
             )
+            
+class Servo:
+    def __init__(self, channel_num):
+        self.val = 0
+        self.prev_val = 0
+        self.channel_num = channel_num
+        self.prev_set_time = time.time()
+    def set_val(self, val):
+        rate_limit = 0.04
+        if (time.time() - self.prev_set_time) > 0:
+            self.val = val
+            print((self.val, self.prev_val))
+            if (self.val - self.prev_val) > 0:
+                self.val = min(self.prev_val + rate_limit, self.val)
+            else:
+                self.val = max(self.prev_val-rate_limit, self.val)
+            set_servo(connection, self.channel_num, self.val)
+            self.prev_val = self.val
 
 def set_param(connection, name, value, type):
     name = name.encode('utf8')
@@ -209,16 +227,30 @@ def fetch_messages_and_update():
 
     input_commands['fd_pitch'] = -airplane_data['pitch']
 
+LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON)
+RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON)
+ELEVATOR = Servo(CHANNEL_ELEVATOR)
+RUDDER = Servo(CHANNEL_RUDDER)
+LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP)
+RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP)
+
 def flight_controller():
     flap_angle = (input_commands['flap_setting']-1)
 
     if TESTING_REAL_PLANE_CHANNELS:
-        set_servo(connection, CHANNEL_LEFT_AILERON, input_commands['aileron'])
-        set_servo(connection, CHANNEL_RIGHT_AILERON, -input_commands['aileron'])
-        set_servo(connection, CHANNEL_ELEVATOR, input_commands['elevator'])
-        set_servo(connection, CHANNEL_RUDDER, 0)
-        set_servo(connection, CHANNEL_LEFT_FLAP, flap_angle)
-        set_servo(connection, CHANNEL_RIGHT_FLAP, flap_angle)
+        # set_servo(connection, CHANNEL_LEFT_AILERON, )
+        # set_servo(connection, CHANNEL_RIGHT_AILERON, )
+        # set_servo(connection, CHANNEL_ELEVATOR, input_commands['elevator'])
+        # set_servo(connection, CHANNEL_RUDDER, 0)
+        # set_servo(connection, CHANNEL_LEFT_FLAP, )
+        # set_servo(connection, CHANNEL_RIGHT_FLAP, flap_angle)
+
+        LEFT_AILERON.set_val(input_commands['aileron'])
+        RIGHT_AILERON.set_val(-input_commands['aileron'])
+        ELEVATOR.set_val(-input_commands['elevator'])
+        RUDDER.set_val(0)
+        LEFT_FLAP.set_val(-flap_angle * 0.4)
+        RIGHT_FLAP.set_val(flap_angle)
 
 msg_or_ctrl_flag = False
 def mavlink_loop():
