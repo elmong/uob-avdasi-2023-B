@@ -2,16 +2,12 @@
 
 from pymavlink import mavutil
 from datetime import datetime
-import numpy as np
-import asyncio
 import time
 import math
 import csv
 import os
 
-from global_var import airplane_data
-from global_var import input_commands
-from global_var import ui_commands
+from global_var import *
 
 import window_drawing
 
@@ -20,7 +16,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz

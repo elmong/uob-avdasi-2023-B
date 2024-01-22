@@ -2,24 +2,24 @@ import pygame
 import time
 import os
 import math
-import math_helpers
 
-from global_var import airplane_data
-from global_var import input_commands
-from global_var import ui_commands
+from math_helpers import *
+from global_var import *
 
 root_path = os.path.abspath(os.path.dirname(__file__))
 
 pygame.init()
 SCREEN_WIDTH = 1920
 SREEN_HEIGHT = 1080
-screen = pygame.display.set_mode((SCREEN_WIDTH, SREEN_HEIGHT), pygame.RESIZABLE, vsync=1)
+MONITOR_SIZE = (pygame.display.Info().current_w*0.9, pygame.display.Info().current_h*0.9)
+screen = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
 
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
     'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
+    'helvetica_big': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 30),
     'helvetica_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 22),
     'helvetica_supersmall': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 12),
     'helvetica_bold': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
@@ -35,6 +35,7 @@ textures = {
     'horizon': pygame.image.load(os.path.join(root_path, 'textures', 'horizon.png')).convert_alpha(),
     'wing': pygame.image.load(os.path.join(root_path, 'textures', 'wing.png')).convert_alpha(),
     'icon': pygame.image.load(os.path.join(root_path, 'textures', 'company_b_logo.png')).convert_alpha(),
+    'shader' : pygame.image.load(os.path.join(root_path, 'textures', 'shader.png')).convert_alpha(),
 }
 pygame.display.set_icon(textures['icon'])
 
@@ -230,8 +231,9 @@ def draw_image_centered_rotated(img, x, y, angle_deg):
     screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
 
 def draw_background_colour():
-    w, h = pygame.display.get_surface().get_size()
-    pygame.draw.rect(screen, colours['bgd'], (0,0,w,h))
+    # w, h = pygame.display.get_surface().get_size()
+    # pygame.draw.rect(screen, colours['bgd'], (0,0,w,h))
+    screen.fill(colours['bgd'])
 
 def draw_bad_screen():
     draw_background_colour()
@@ -259,8 +261,8 @@ def draw_control_square():
     draw_rectangle(cursor_ctrl_box_x, cursor_ctrl_box_y, cursor_ctrl_side_length, cursor_ctrl_side_length, colours['pearl'], 2)
 
 def draw_control_handle():
-    x = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), input_commands['aileron']/cursor_ctrl_boost_factor)
-    y = math_helpers.lerp( (-1, 1) , (cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), input_commands['elevator']/cursor_ctrl_boost_factor)
+    x = lerp( (-1, 1) , (cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), input_commands['aileron']/cursor_ctrl_boost_factor)
+    y = lerp( (-1, 1) , (cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), input_commands['elevator']/cursor_ctrl_boost_factor)
     offsets = 3
     line_length = 14
     pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 2)
@@ -292,7 +294,7 @@ def draw_adi(roll, pitch, pitch_bar):
 
     if input_commands['fd_on']:
         fd_size = 132
-        fd_y = math_helpers.clamper( y - pitch_bar * pitch_px_per_deg, y-fd_size, y+fd_size)
+        fd_y = clamper( y - pitch_bar * pitch_px_per_deg, y-fd_size, y+fd_size)
         pygame.draw.line(screen, colours['bgd'], (x-fd_size-1, fd_y), (x+fd_size+1, fd_y), 5)
         pygame.draw.line(screen, colours['green'], (x-fd_size, fd_y), (x+fd_size, fd_y), 3)
 
@@ -367,7 +369,7 @@ def draw_ctrl_diag():
 
     draw_line((center_x, 825), (center_x, 855), 5, colours['green_blue'])
 
-    test_val = math.sin(time.time())
+    test_val = 0
 
     draw_control_bar_vert(1353, 735, 'left', test_val, 'L AIL', test_val)
     draw_control_bar_vert(2*center_x-1353, 735, 'right', test_val, 'R AIL', test_val)
@@ -376,7 +378,7 @@ def draw_ctrl_diag():
 
     draw_control_bar_hori(center_x, 900, 'down', test_val, 'RUD', test_val)
 
-spd_damper = math_helpers.SmoothDamp()
+spd_damper = SmoothDamp()
 prev_spd = 0
 def draw_spd_tape(spd):
     # the frame
@@ -412,7 +414,7 @@ def draw_spd_tape(spd):
     #speed trend
     if abs(spd_trend) > 0.2:
         trend_tip_y = center_y - 30 * spd_trend
-        trend_tip_y = math_helpers.clamper(trend_tip_y, 320, 783)
+        trend_tip_y = clamper(trend_tip_y, 320, 783)
         draw_line((169, center_y), (169, trend_tip_y), 2, colours['green'])
         if spd_trend < 0:
             draw_line((169, trend_tip_y), (169-6, trend_tip_y-12), 2, colours['green'])
@@ -420,6 +422,45 @@ def draw_spd_tape(spd):
         else:
             draw_line((169, trend_tip_y), (169-6, trend_tip_y+12), 2, colours['green'])
             draw_line((169, trend_tip_y), (169+6, trend_tip_y+12), 2, colours['green'])
+
+
+    pygame.draw.polygon(screen, colours['bgd'], ((63, 527),(133, 527),(155, 550), (133, 573),(63, 573) ))   
+    draw_line((63, 527), (133, 527), 2, colours['pearl'])
+    draw_line((155, 550), (133, 527), 3, colours['pearl'])
+    draw_line((155, 550), (133, 573), 3, colours['pearl'])
+    draw_line((133, 573), (63, 573), 2, colours['pearl'])
+    draw_line((63, 527), (63, 573), 2, colours['pearl'])
+
+    screen.set_clip((64, 528), (133-64, 573-528))
+    roll_px = 26
+    scrolling_start = 0.7
+
+    for i in range(-2, 12):
+        y_decimal = i * roll_px - (spd%1*10) * roll_px
+
+        y_units = 0
+        if spd%1 < scrolling_start:
+            y_units = i * roll_px - math.floor(spd%10) * roll_px
+        else:
+            y_units = i * roll_px - math.floor(spd%10) * roll_px - lerp(((spd-spd%1)+scrolling_start, spd-spd%1+1), (0,1), spd)*roll_px
+        
+        y_tens = 0
+        if spd%10 < 9+scrolling_start:
+            y_tens = i * roll_px - math.floor(spd%100/10) * roll_px
+        else:
+            y_tens = i * roll_px - math.floor(spd%100/10) * roll_px - lerp(((spd-spd%10)+9+scrolling_start, spd-spd%10+10), (0,1), spd)*roll_px
+
+        y_decimal = clamper(y_decimal, -235, 235)
+        y_units = clamper(y_units, -235, 235)
+        y_tens = clamper(y_tens, -235, 235)
+        draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 125, 550 - y_decimal)
+        draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 101, 550 - y_units)
+        draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 85, 550 - y_tens)
+
+    pygame.draw.rect(screen, colours['green'], (110,558,3,3))
+    screen.set_clip(None)
+    draw_image_centered(textures['shader'], (63+133)/2+2, (527+573)/2+1)
+    # pygame.draw.rect(screen, colours['bgd'], (63+2, 527+2,133-63-2,573-527-2))
 
 def draw_menu():
     w, h = pygame.display.get_surface().get_size()
@@ -436,8 +477,8 @@ def draw_refresh_rate():
         draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
 
 mouse_attached_to_ctrl = False
-elevator_damper = math_helpers.SmoothDamp() #init the instances
-aileron_damper = math_helpers.SmoothDamp()
+elevator_damper = SmoothDamp() #init the instances
+aileron_damper = SmoothDamp()
 
 def attach_control(): # if x and y is in range, attach the mouse control
     global mouse_attached_to_ctrl
@@ -453,10 +494,10 @@ def update_mouse_control():
 
     if mouse_attached_to_ctrl:
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        roll_command = math_helpers.lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor, 1 * cursor_ctrl_boost_factor), mouse_x)
-        roll_command = math_helpers.clamper(roll_command, -1, 1)
-        pitch_command = math_helpers.lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor , 1 * cursor_ctrl_boost_factor), mouse_y)
-        pitch_command = math_helpers.clamper(pitch_command, -1, 1)
+        roll_command = lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor, 1 * cursor_ctrl_boost_factor), mouse_x)
+        roll_command = clamper(roll_command, -1, 1)
+        pitch_command = lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor , 1 * cursor_ctrl_boost_factor), mouse_y)
+        pitch_command = clamper(pitch_command, -1, 1)
 
     input_commands['elevator'] = elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
     input_commands['aileron'] = aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
@@ -481,11 +522,15 @@ def pygame_update_loop():
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
             # stuff related to the control cursor
-            if math_helpers.within(mouse_x, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and math_helpers.within(mouse_y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
+            if within(mouse_x, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and within(mouse_y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
                 attach_control()
 
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
+
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    for button in Button.instances:
+        button.check_hot(mouse_x, mouse_y)
 
     GET_DELTA_TIME() # should come before anything else
     update_mouse_control()
@@ -498,16 +543,12 @@ def pygame_draw_loop(): #loop
     # draw_text_xcentered( 'ROLL : ' + str(round(airplane_data['roll'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*1)
     # draw_text_xcentered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
     # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
-
-    mouse_x, mouse_y = pygame.mouse.get_pos()
-    for button in Button.instances:
-        button.check_hot(mouse_x, mouse_y)
     #print(input_commands['elevator'], input_commands['aileron'])
     draw_control_square()
     draw_control_handle()
     draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
-    draw_spd_tape(airplane_data['airspeed'])
-    #draw_spd_tape(12*math.sin(time.time()/2))
+    #draw_spd_tape(airplane_data['airspeed'])
+    draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()
     draw_refresh_rate()
     draw_log_sys()
