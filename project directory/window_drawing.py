@@ -12,7 +12,8 @@ pygame.init()
 SCREEN_WIDTH = 1920
 SREEN_HEIGHT = 1080
 MONITOR_SIZE = (pygame.display.Info().current_w*0.9, pygame.display.Info().current_h*0.9)
-screen = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
+display = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
+screen = pygame.Surface((SCREEN_WIDTH, SREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
 
@@ -509,17 +510,25 @@ def draw_buttons():
         button.draw()
 
 def pygame_update_loop():
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    screen_w, screen_h = screen.get_size()
+    display_w, display_h = display.get_size()
+
+    mouse_x = mouse_x * (screen_w/display_w)
+    mouse_y = mouse_y * (screen_h/display_h)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
+        elif event.type == pygame.VIDEORESIZE:
+            pass
         elif event.type == pygame.MOUSEBUTTONDOWN:
-
             #stuff about the buttons
             for button in Button.instances:
                 # the condition to check if mouse is over is already included in the check_hot step than changes a flag
                 button.actuate()
 
-            mouse_x, mouse_y = pygame.mouse.get_pos()
+
 
             # stuff related to the control cursor
             if within(mouse_x, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and within(mouse_y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
@@ -528,7 +537,6 @@ def pygame_update_loop():
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
 
-    mouse_x, mouse_y = pygame.mouse.get_pos()
     for button in Button.instances:
         button.check_hot(mouse_x, mouse_y)
 
@@ -554,5 +562,9 @@ def pygame_draw_loop(): #loop
     draw_log_sys()
     draw_ctrl_diag()
     draw_buttons()
+
+    drawing_surface_center = screen.get_rect().center
+    scaled_drawing_surface = pygame.transform.smoothscale(screen, display.get_size())
+    display.blit(scaled_drawing_surface, (0, 0))
   
     pygame.display.update()
