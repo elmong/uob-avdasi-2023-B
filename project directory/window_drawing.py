@@ -17,6 +17,9 @@ screen = pygame.Surface((SCREEN_WIDTH, SREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
 
+MOUSE_X = 0
+MOUSE_Y = 0
+
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
     'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
@@ -84,10 +87,10 @@ class Button:
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
     
-    def check_hot(self, mouse_x, mouse_y):
+    def check_hot(self, MOUSE_X, MOUSE_Y):
         self.is_hovered = (
-            self.x < mouse_x < self.x + self.width and
-            self.y < mouse_y < self.y + self.height
+            self.x < MOUSE_X < self.x + self.width and
+            self.y < MOUSE_Y < self.y + self.height
         )
     
     def actuate(self):
@@ -434,7 +437,7 @@ def draw_spd_tape(spd):
 
     screen.set_clip((64, 528), (133-64, 573-528))
     roll_px = 26
-    scrolling_start = 0.7
+    scrolling_start = 0.9
 
     for i in range(-2, 12):
         y_decimal = i * roll_px - (spd%1*10) * roll_px
@@ -464,7 +467,7 @@ def draw_spd_tape(spd):
     # pygame.draw.rect(screen, colours['bgd'], (63+2, 527+2,133-63-2,573-527-2))
 
 def draw_menu():
-    w, h = pygame.display.get_surface().get_size()
+    w, h = screen.get_size()
     draw_line((0, 112), (w, 112), 3, colours['pearl'])
     draw_text_xcentered('SYSTEM MENU ACCESS', fonts['dbxl_small'], colours['pearl'], 1920/2, 92)
 
@@ -494,10 +497,11 @@ def update_mouse_control():
     roll_command = 0
 
     if mouse_attached_to_ctrl:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        roll_command = lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor, 1 * cursor_ctrl_boost_factor), mouse_x)
+        global MOUSE_X
+        global MOUSE_Y
+        roll_command = lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor, 1 * cursor_ctrl_boost_factor), MOUSE_X)
         roll_command = clamper(roll_command, -1, 1)
-        pitch_command = lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor , 1 * cursor_ctrl_boost_factor), mouse_y)
+        pitch_command = lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor , 1 * cursor_ctrl_boost_factor), MOUSE_Y)
         pitch_command = clamper(pitch_command, -1, 1)
 
     input_commands['elevator'] = elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
@@ -510,12 +514,14 @@ def draw_buttons():
         button.draw()
 
 def pygame_update_loop():
-    mouse_x, mouse_y = pygame.mouse.get_pos()
+    mouse_beforetransform_x, mouse_beforetransform_y = pygame.mouse.get_pos()
     screen_w, screen_h = screen.get_size()
     display_w, display_h = display.get_size()
 
-    mouse_x = mouse_x * (screen_w/display_w)
-    mouse_y = mouse_y * (screen_h/display_h)
+    global MOUSE_X
+    global MOUSE_Y
+    MOUSE_X = mouse_beforetransform_x * (screen_w/display_w)
+    MOUSE_Y = mouse_beforetransform_y * (screen_h/display_h)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -531,14 +537,14 @@ def pygame_update_loop():
 
 
             # stuff related to the control cursor
-            if within(mouse_x, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and within(mouse_y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
+            if within(MOUSE_X, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and within(MOUSE_Y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
                 attach_control()
 
         elif event.type == pygame.MOUSEBUTTONUP:
             detach_control()
 
     for button in Button.instances:
-        button.check_hot(mouse_x, mouse_y)
+        button.check_hot(MOUSE_X, MOUSE_Y)
 
     GET_DELTA_TIME() # should come before anything else
     update_mouse_control()
