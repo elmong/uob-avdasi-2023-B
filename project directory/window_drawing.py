@@ -11,7 +11,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 pygame.init()
 SCREEN_WIDTH = 1920
 SREEN_HEIGHT = 1080
-MONITOR_SIZE = (pygame.display.Info().current_w*0.9, pygame.display.Info().current_h*0.9)
+MONITOR_SIZE = (pygame.display.Info().current_w*0.6, pygame.display.Info().current_h*0.6)
 display = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
 screen = pygame.Surface((SCREEN_WIDTH, SREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
@@ -56,11 +56,6 @@ colours = {
     'green_blue'   : (0  ,201,186 ),
     'dark_blue'   : (0  ,98,114 ),
 }
-
-cursor_ctrl_box_x = 939
-cursor_ctrl_box_y = 540
-cursor_ctrl_side_length = 244
-cursor_ctrl_boost_factor = 1.05 # cursor_ctrl_boost_factor for aesthetics, so that the cross don't stick to the edge
 
 class Button:
     instances = []
@@ -112,10 +107,10 @@ class ToggleButton(Button):
             pygame.draw.rect(screen, colours['green_blue'], (self.x + 3 ,self.y + 3, self.width - 5, self.height - 5))
     
         if self.text_row2:
-            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 - 10)
-            draw_text_centered(self.text_row2, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 + 10)
+            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 - 10+3)
+            draw_text_centered(self.text_row2, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 + 10+3)
         else:
-            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2)
+            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2+3)
             
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
@@ -163,6 +158,8 @@ flaps_up_button = ToggleButton(250, 835, 70, 68, colours['pearl'], fonts['dbxl_t
 flaps_to_button = ToggleButton(250 + 75 + 5, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "TO", callback = setflaps.to) 
 flaps_ld_button = ToggleButton(250 + 75 * 2 + 10, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "LG", callback = setflaps.ldg) 
 flaps_up_button.force_state(True) # by default is up
+
+step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
 page_fwd_button = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
 page_fwd_button = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
@@ -261,27 +258,6 @@ def draw_init_screen():
 
     pygame.display.update() # called once only
 
-def draw_control_square():
-    draw_rectangle(cursor_ctrl_box_x, cursor_ctrl_box_y, cursor_ctrl_side_length, cursor_ctrl_side_length, colours['pearl'], 2)
-
-def draw_control_handle():
-    x = lerp( (-1, 1) , (cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), input_commands['aileron']/cursor_ctrl_boost_factor)
-    y = lerp( (-1, 1) , (cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), input_commands['elevator']/cursor_ctrl_boost_factor)
-    offsets = 3
-    line_length = 14
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 2)
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets , y + offsets + line_length), 2)
-
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets - line_length, y + offsets), 2)
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets , y + offsets + line_length), 2)
-
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets + line_length, y - offsets), 2)
-    pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets , y - offsets - line_length), 2)
-
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 2)
-    pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 2)
-
-
 def draw_adi(roll, pitch, pitch_bar):
     draw_rectangle(220, 319, 464, 464, colours['light_blue'], 2)
     pitch_px_per_deg = 507/80 # 503 px for 80 degrees pitch
@@ -298,7 +274,7 @@ def draw_adi(roll, pitch, pitch_bar):
 
     if input_commands['fd_on']:
         fd_size = 132
-        fd_y = clamper( y - pitch_bar * pitch_px_per_deg, y-fd_size, y+fd_size)
+        fd_y = clamper( y - pitch_bar * pitch_px_per_deg, y-210, y+210)
         pygame.draw.line(screen, colours['bgd'], (x-fd_size-1, fd_y), (x+fd_size+1, fd_y), 5)
         pygame.draw.line(screen, colours['green'], (x-fd_size, fd_y), (x+fd_size, fd_y), 3)
 
@@ -466,6 +442,61 @@ def draw_spd_tape(spd):
     draw_image_centered(textures['shader'], (63+133)/2+2, (527+573)/2+1)
     # pygame.draw.rect(screen, colours['bgd'], (63+2, 527+2,133-63-2,573-527-2))
 
+class Stepper:
+    def __init__(self):
+        self.attached_to_ctrl = False
+        self.max_pitch = 30
+        self.handle_x_coord = (760+853)/2
+        self.handle_y_coord = (321+696)/2
+        self.handle_height = 10
+        self.handle_width = 62
+        self.displayed_pitch = 0
+        self.region_min_x = 760
+        self.region_max_x = 853
+        self.region_min_y = 321
+        self.region_max_y = 696
+        self.click_start_time = time.time()
+
+    def draw(self):
+        draw_line(((760+853)/2-20, 321), ((760+853)/2-20, 696), 3, colours['grey'])
+        draw_line((760+10-20, 696), (853-10-20, 696), 3, colours['pearl'])
+        draw_line((760+10-20, 321), (853-10-20, 321), 3, colours['pearl'])
+        draw_line((760+30-20, (321+696)/2), (853-30-20, (321+696)/2), 3, colours['pearl'])
+
+        pch_cmd = self.displayed_pitch
+        half_length = 188 # how high in px from 0 to max pch bar
+
+        handle_y_offset = -pch_cmd * (half_length/self.max_pitch)
+        self.handle_y_coord = (321+696)/2 + handle_y_offset
+        pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.handle_height/2, self.handle_width, self.handle_height))
+
+        draw_text_ycentered(int(pch_cmd), fonts['dbxl'], colours['green_blue'], (760+853)/2+20, (321+696)/2)
+
+    def attach(self):
+        self.attached_to_ctrl = True
+
+    def detach(self):
+        self.attached_to_ctrl = False
+
+    def match_handle(self):
+        buff = -(MOUSE_Y-(321+696)/2) / (12.2*15/self.max_pitch)
+        buff = clamper(int(buff), -self.max_pitch, self.max_pitch)
+        self.displayed_pitch = buff
+        self.attach()
+
+    def update(self):
+        if time.time() - self.click_start_time > 0.5:
+            step_button.force_state(False)
+        if self.attached_to_ctrl:
+            self.match_handle()
+
+    def send_command(self):
+        input_commands['fd_pitch'] = self.displayed_pitch
+        self.click_start_time = time.time()
+
+stepper = Stepper()
+
+
 def draw_menu():
     w, h = screen.get_size()
     draw_line((0, 112), (w, 112), 3, colours['pearl'])
@@ -480,32 +511,58 @@ def draw_refresh_rate():
         pygame.draw.rect(screen, colours['red'], (20,96,min(rate, 190),7))
         draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
 
-mouse_attached_to_ctrl = False
-elevator_damper = SmoothDamp() #init the instances
-aileron_damper = SmoothDamp()
+class MouseControl():
+    def __init__(self):
+        self.mouse_attached_to_ctrl = False
+        self.elevator_damper = SmoothDamp() #init the instances
+        self.aileron_damper = SmoothDamp()
+        self.cursor_ctrl_box_x = 939
+        self.cursor_ctrl_box_y = 540
+        self.cursor_ctrl_side_length = 244
+        self.cursor_ctrl_boost_factor = 1.05 # self.cursor_ctrl_boost_factor for aesthetics, so that the cross don't stick to the edge
 
-def attach_control(): # if x and y is in range, attach the mouse control
-    global mouse_attached_to_ctrl
-    mouse_attached_to_ctrl = True
+    def attach(self): # if x and y is in range, attach the mouse control
+        self.mouse_attached_to_ctrl = True
+    
+    def detach(self):
+        self.mouse_attached_to_ctrl = False
+    
+    def update(self):
+        pitch_command = 0
+        roll_command = 0
+    
+        if self.mouse_attached_to_ctrl:
+            global MOUSE_X
+            global MOUSE_Y
+            roll_command = lerp((self.cursor_ctrl_box_x, self.cursor_ctrl_box_x+self.cursor_ctrl_side_length), (-1 * self.cursor_ctrl_boost_factor, 1 * self.cursor_ctrl_boost_factor), MOUSE_X)
+            roll_command = clamper(roll_command, -1, 1)
+            pitch_command = lerp((self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), (-1 * self.cursor_ctrl_boost_factor , 1 * self.cursor_ctrl_boost_factor), MOUSE_Y)
+            pitch_command = clamper(pitch_command, -1, 1)
+    
+        input_commands['elevator'] = self.elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
+        input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
+    
+    def draw(self):
+        draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['pearl'], 2)
 
-def detach_control():
-    global mouse_attached_to_ctrl
-    mouse_attached_to_ctrl = False
+        x = lerp( (-1, 1) , (self.cursor_ctrl_box_x, self.cursor_ctrl_box_x+self.cursor_ctrl_side_length), input_commands['aileron']/self.cursor_ctrl_boost_factor)
+        y = lerp( (-1, 1) , (self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), input_commands['elevator']/self.cursor_ctrl_boost_factor)
+        offsets = 3
+        line_length = 14
+        pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 2)
+        pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets , y + offsets + line_length), 2)
 
-def update_mouse_control():
-    pitch_command = 0
-    roll_command = 0
+        pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets - line_length, y + offsets), 2)
+        pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets , y + offsets + line_length), 2)
 
-    if mouse_attached_to_ctrl:
-        global MOUSE_X
-        global MOUSE_Y
-        roll_command = lerp((cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor, 1 * cursor_ctrl_boost_factor), MOUSE_X)
-        roll_command = clamper(roll_command, -1, 1)
-        pitch_command = lerp((cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length), (-1 * cursor_ctrl_boost_factor , 1 * cursor_ctrl_boost_factor), MOUSE_Y)
-        pitch_command = clamper(pitch_command, -1, 1)
+        pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets + line_length, y - offsets), 2)
+        pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets , y - offsets - line_length), 2)
 
-    input_commands['elevator'] = elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
-    input_commands['aileron'] = aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
+        pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 2)
+        pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 2)
+
+
+mouse_control = MouseControl()
 
 ## Below are the update loop and draw loop, they should always be at the bottom
 
@@ -537,17 +594,23 @@ def pygame_update_loop():
 
 
             # stuff related to the control cursor
-            if within(MOUSE_X, cursor_ctrl_box_x, cursor_ctrl_box_x+cursor_ctrl_side_length) and within(MOUSE_Y, cursor_ctrl_box_y, cursor_ctrl_box_y+cursor_ctrl_side_length) :
-                attach_control()
+            if within(MOUSE_X, mouse_control.cursor_ctrl_box_x, mouse_control.cursor_ctrl_box_x+mouse_control.cursor_ctrl_side_length) and within(MOUSE_Y, mouse_control.cursor_ctrl_box_y, mouse_control.cursor_ctrl_box_y+mouse_control.cursor_ctrl_side_length) :
+                mouse_control.attach()
+            elif within(MOUSE_X, stepper.handle_x_coord - 50, stepper.handle_x_coord + 50) and within(MOUSE_Y, stepper.handle_y_coord - 20, stepper.handle_y_coord + 20):
+                stepper.attach()
+            elif within(MOUSE_X, stepper.region_min_x, stepper.region_max_x) and within(MOUSE_Y, stepper.region_min_y, stepper.region_max_y):
+                stepper.match_handle()
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            detach_control()
+            mouse_control.detach()
+            stepper.detach()
 
     for button in Button.instances:
         button.check_hot(MOUSE_X, MOUSE_Y)
 
     GET_DELTA_TIME() # should come before anything else
-    update_mouse_control()
+    mouse_control.update()
+    stepper.update()
     
 def pygame_draw_loop(): #loop
     draw_background_colour()
@@ -558,8 +621,7 @@ def pygame_draw_loop(): #loop
     # draw_text_xcentered( 'PITCH : ' + str(round(airplane_data['pitch'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*2)
     # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
     #print(input_commands['elevator'], input_commands['aileron'])
-    draw_control_square()
-    draw_control_handle()
+
     draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
     #draw_spd_tape(airplane_data['airspeed'])
     draw_spd_tape(15*math.sin(time.time()/10)**2)
@@ -567,6 +629,8 @@ def pygame_draw_loop(): #loop
     draw_refresh_rate()
     draw_log_sys()
     draw_ctrl_diag()
+    stepper.draw()
+    mouse_control.draw()
     draw_buttons()
 
     drawing_surface_center = screen.get_rect().center
