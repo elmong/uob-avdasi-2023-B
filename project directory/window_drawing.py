@@ -566,6 +566,16 @@ class MouseControl():
 
 mouse_control = MouseControl()
 
+def draw_servo_diagnostic():
+    draw_rectangle(939, 215, 545, 270, colours['light_blue'], 2)
+    pygame.draw.line(screen, colours['light_blue'], (939, 215+30) , (939+545, 215+30), 2)
+    pygame.draw.rect(screen, colours['light_blue'], (939,215,30,30))
+    draw_text("CTRL CLOSEUP", fonts['helvetica_small'], colours['pearl'], 978, 217)
+
+    draw_rectangle( 1513,215,384,105, colours['light_blue'], 2)
+    draw_rectangle( 1513,337,384,105, colours['light_blue'], 2)
+
+
 ## Below are the update loop and draw loop, they should always be at the bottom
 
 def draw_buttons():
@@ -633,6 +643,7 @@ def pygame_draw_loop(): #loop
     draw_ctrl_diag()
     stepper.draw()
     mouse_control.draw()
+    draw_servo_diagnostic()
     draw_buttons()
 
     drawing_surface_center = screen.get_rect().center

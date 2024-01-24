@@ -39,3 +39,29 @@ class SmoothDamp:
             self.current_velocity = (num8 - num5) / delta_time
 
         return num8
+
+class Interpolator:
+    # Use it like this:
+    # foo_interpolator = Interpolator([(0, 10), (1, 20), (2, 40), (3, 40)])
+    # to retrieve:
+    # y = foo_interpolator.value(x)
+
+    def __init__(self, points):
+        # Sort points based on x values
+        self.points = sorted(points, key=lambda point: point[0])
+        self.min_x = self.points[0][0]
+        self.max_x = self.points[-1][0]
+
+    def value(self, x):
+        if x <= self.min_x:
+            return self.points[0][1]
+        elif x >= self.max_x:
+            return self.points[-1][1]
+        else:
+            # Find the two closest points for interpolation
+            for i in range(len(self.points) - 1):
+                if self.points[i][0] <= x <= self.points[i + 1][0]:
+                    x1, y1 = self.points[i]
+                    x2, y2 = self.points[i + 1]
+                    # Linear interpolation formula
+                    return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
