@@ -51,6 +51,7 @@ colours = {
     'pearl' : (247,255,228),
     'pearl_grey' : (247/2,255/2,228/2),
     'red'   : (255,102,95 ),
+    'amber'   : (254,158,90 ),
     'green'   : (130,245,174 ),
     'light_blue'   : (154,255,255 ),
     'green_blue'   : (0  ,201,186 ),
@@ -469,8 +470,9 @@ class Stepper:
         handle_y_offset = -pch_cmd * (half_length/self.max_pitch)
         self.handle_y_coord = (321+696)/2 + handle_y_offset
         pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.handle_height/2, self.handle_width, self.handle_height))
+        pygame.draw.rect(screen, colours['light_blue'], (self.handle_x_coord-self.handle_width/2-20+2, self.handle_y_coord-self.handle_height/2+2, self.handle_width-4, self.handle_height-4))
 
-        draw_text_ycentered(int(pch_cmd), fonts['dbxl'], colours['green_blue'], (760+853)/2+20, (321+696)/2)
+        draw_text_ycentered(int(pch_cmd), fonts['dbxl'], colours['green'] if input_commands['fd_pitch'] == pch_cmd else colours['amber'], (760+853)/2+20, (321+696)/2)
 
     def attach(self):
         self.attached_to_ctrl = True

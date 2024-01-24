@@ -238,12 +238,6 @@ def flight_controller():
     flap_angle = (input_commands['flap_setting']-1)
 
     if TESTING_REAL_PLANE_CHANNELS:
-        # set_servo(connection, CHANNEL_LEFT_AILERON, )
-        # set_servo(connection, CHANNEL_RIGHT_AILERON, )
-        # set_servo(connection, CHANNEL_ELEVATOR, input_commands['elevator'])
-        # set_servo(connection, CHANNEL_RUDDER, 0)
-        # set_servo(connection, CHANNEL_LEFT_FLAP, )
-        # set_servo(connection, CHANNEL_RIGHT_FLAP, flap_angle)
 
         LEFT_AILERON.set_val(input_commands['aileron'])
         RIGHT_AILERON.set_val(-input_commands['aileron'])
@@ -252,11 +246,7 @@ def flight_controller():
         LEFT_FLAP.set_val(-flap_angle * 0.4)
         RIGHT_FLAP.set_val(flap_angle)
 
-msg_or_ctrl_flag = False
 def mavlink_loop():
-    # Flight Director Pitch Bar
-    global msg_or_ctrl_flag
-
     fetch_messages_and_update()
     flight_controller()
     update_refresh_rate()
