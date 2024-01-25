@@ -2,12 +2,17 @@
 
 from pymavlink import mavutil
 from datetime import datetime
+import asyncio
+import time
 import time
 import math
 import csv
 import os
+import serial
 
 from global_var import *
+import GCS_serial_reader
+import pico_class
 
 import window_drawing
 
@@ -161,6 +166,30 @@ window_drawing.draw_init_screen()
 if not TESTING_GRAPHICS_ONLY:
     init_values()
 
+
+#declare pico objects
+pico0 = pico_class.Pico(0, None , False, coms_ports['pico0'], -1)
+#pico1 = pico_class.Pico(1, None , False, coms_ports['pico1'], None)
+#pico2 = pico_class.Pico(2, None , False, coms_ports['pico2'], None)
+#pico3 = pico_class.Pico(3, None , False, coms_ports['pico3'], None)
+#pico4 = pico_class.Pico(4, None , False, coms_ports['pico4'], None)
+#pico5 = pico_class.Pico(5, None , False, coms_ports['pico5'], None)
+
+#pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
+pico_array = [pico0]
+
+def connect_picos():
+    #if pico connections are closed, attempt connection
+    for item in pico_array:
+        if item.Connection_status == False:
+            item.initialize_connection()
+
+def collect_pico_msgs(): #collects all of the picos' messages
+    for item in pico_array:
+        item.read_message()
+        print(angle_sensor_data_live['sensor2'])
+
+
 ################################ LAND OF PREVIOUS VALUES
 
 last_time = time.time()
@@ -255,6 +284,11 @@ def pygame_loop():
     window_drawing.pygame_draw_loop()
     window_drawing.pygame_update_loop()
 
+connect_picos()
+def pico_loop(): #where all of the pico's events are handled
+    collect_pico_msgs()
+    
+
 while True:
 
     if TESTING_GRAPHICS_ONLY:
@@ -262,5 +296,6 @@ while True:
     else:
         mavlink_loop()
         pygame_loop()
+        pico_loop()
     mavlink_logging()
 

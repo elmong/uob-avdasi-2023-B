@@ -27,3 +27,53 @@ ui_commands = {
     'logging' : False,
 }
 
+#Ports/connection addresses used
+coms_ports = {
+    #pico# does not have to match pico ID, just generic assignment of ports to picos
+    'pico0' : 'COM6',
+    'pico1' : 'COM13',
+    'pico2' : 'COM13',
+    'pico3' : 'COM13',
+    'pico4' : 'COM13',
+    'pico5' : 'COM13'
+}
+
+#pico connection status
+pico_status = {
+    'pico0' : False,
+    'pico1' : False,
+    'pico2' : False,
+    'pico3' : False,
+    'pico4' : False,
+    'pico5' : False
+}
+
+#GCS Serial Reader Message Size in Bytes
+serial_reader_msg_size = 32
+
+#Sensor Data
+angle_sensor_data_live = {
+    'sensor1' : 0,
+    'sensor2' : 0,
+    'sensor3' : 0,
+    'sensor4' : 0,
+    'sensor5' : 0,
+    'sensor6' : 0,
+    'sensor7' : 0,
+    'sensor8' : 0,
+    'sensor9' : 0,
+    'sensor10' : 0,
+    'sensor11' : 0,
+    'sensor12' : 0
+}
+
+#file path to store data to
+file_path = 'Results.csv'
+
+PID_values = {
+    'Kp' : 1.0,
+    'Ki' : 0.1,
+    'Kd' : 0.01,
+    'setpoint' : 0,
+    'output_limits' : (-45,45)
+}
