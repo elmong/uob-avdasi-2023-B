@@ -24,6 +24,7 @@ fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
     'helvetica': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
     'helvetica_big': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 30),
+    'helvetica_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 36),
     'helvetica_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 22),
     'helvetica_supersmall': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 12),
     'helvetica_bold': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
@@ -31,21 +32,29 @@ fonts = {
     'dbxl_title': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 20),
     'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60),
     'dbxl_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 15),
+    'dbxl_supersmall': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 13),
+
 
 }
 fonts['helvetica_bold'].set_bold(True)
+fonts['helvetica_supersmall'].set_bold(True)
 
 textures = {
     'horizon': pygame.image.load(os.path.join(root_path, 'textures', 'horizon.png')).convert_alpha(),
     'wing': pygame.image.load(os.path.join(root_path, 'textures', 'wing.png')).convert_alpha(),
     'icon': pygame.image.load(os.path.join(root_path, 'textures', 'company_b_logo.png')).convert_alpha(),
     'shader' : pygame.image.load(os.path.join(root_path, 'textures', 'shader.png')).convert_alpha(),
+    'servo' : pygame.image.load(os.path.join(root_path, 'textures', 'servo.png')).convert_alpha(),
+    'servo_arm' : pygame.image.load(os.path.join(root_path, 'textures', 'servo_arm.png')).convert_alpha(),
+    'surface' : pygame.image.load(os.path.join(root_path, 'textures', 'surface.png')).convert_alpha(),
 }
+
 pygame.display.set_icon(textures['icon'])
 
 colours = {
     'white' : (255,255,255),
     'grey'  : (255/2,255/2,255/2),
+    'dark_grey'  : (255/4,255/4,255/4),
     'black' : (0  ,0  ,0  ),
     'bgd'   : (1  ,17 ,21 ),
     'pearl' : (247,255,228),
@@ -143,15 +152,21 @@ class SetFlaps():
         flaps_ld_button.force_state(False)
 setflaps = SetFlaps()
 
+def ap_on():
+    input_commands.update(ap_on=not input_commands['ap_on'])
+    if input_commands['ap_on']:
+        input_commands.update(fd_on=True)
+        fd_button.force_state(True)
+
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
-arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM VEHICLE")
-button_2 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 2")
-button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 4")
-button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 4")
+arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
+button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 1")
+button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
+button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 5")
 fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
-ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT") 
+ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = ap_on) 
 
 data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING", callback = lambda: ui_commands.update(logging=not ui_commands['logging'])) 
 
@@ -162,8 +177,11 @@ flaps_up_button.force_state(True) # by default is up
 
 step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
-page_fwd_button = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
-page_fwd_button = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
+page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
+page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
+
+page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
+page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
 
 ############  I love OOP
 
@@ -467,6 +485,10 @@ class Stepper:
         pch_cmd = self.displayed_pitch
         half_length = 188 # how high in px from 0 to max pch bar
 
+        for i in range(-5, 5 + 1):
+            if i != 0:
+                draw_line((760+30-20, (321+696)/2 + (i/6) * half_length), (853-30-20, (321+696)/2 + (i/6) * half_length), 3, colours['grey'])
+
         handle_y_offset = -pch_cmd * (half_length/self.max_pitch)
         self.handle_y_coord = (321+696)/2 + handle_y_offset
         pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.handle_height/2, self.handle_width, self.handle_height))
@@ -545,6 +567,7 @@ class MouseControl():
         input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
     
     def draw(self):
+        draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['grey'], 4)
         draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['pearl'], 2)
 
         x = lerp( (-1, 1) , (self.cursor_ctrl_box_x, self.cursor_ctrl_box_x+self.cursor_ctrl_side_length), input_commands['aileron']/self.cursor_ctrl_boost_factor)
@@ -573,8 +596,97 @@ def draw_servo_diagnostic():
     draw_text("CTRL CLOSEUP", fonts['helvetica_small'], colours['pearl'], 978, 217)
 
     draw_rectangle( 1513,215,384,105, colours['light_blue'], 2)
-    draw_rectangle( 1513,337,384,105, colours['light_blue'], 2)
+    pygame.draw.line(screen, colours['light_blue'], (1513, 215+73) , (1513+384, 215+73), 2)
 
+    draw_rectangle( 1513,337,384,105, colours['light_blue'], 2)
+    pygame.draw.line(screen, colours['light_blue'], (1513, 337+73) , (1513+384, 337+73), 2)
+
+    draw_image_centered(textures['servo'], 1070, 371)
+
+    servo_angle = math.sin(time.time())*45
+    surface_angle = math.sin(time.time())*45
+
+    draw_image_centered_rotated(textures['servo_arm'], 1099, 370, servo_angle)
+
+    draw_image_centered_rotated(textures['surface'], 1280, 370, surface_angle)
+
+    pygame.draw.line(screen, colours['green_blue'], (int(1099 + 83 * math.sin(math.radians(servo_angle))), int(370 - 83*math.cos(math.radians(servo_angle)))) , (int(1280 + 88 * math.sin(math.radians(surface_angle-13.72))), int(370 - 88*math.cos(math.radians(surface_angle-13.72)))), 4)
+
+    draw_text("// TMS CMD POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218)
+    draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(servo_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237)
+    draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302)
+
+    draw_text("// HALL SENSR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
+    draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
+    draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
+
+    draw_text_centered("PWM: 1500", fonts['dbxl_title'], colours['green_blue'], 1070, 420)
+
+def draw_aoa_bar(aoa):
+    draw_rectangle(614, 215, 280, 70, colours['light_blue'], 2)
+    draw_text_centered("A", fonts['dbxl_title'], colours['pearl'], 610+22, 215+70/2-20+2)
+    draw_text_centered("O", fonts['dbxl_title'], colours['pearl'], 610+22, 215+70/2+2)
+    draw_text_centered("A", fonts['dbxl_title'], colours['pearl'], 610+22, 215+70/2+20+2)
+
+    aoa = int(aoa)
+
+    for i in range(15):
+        pygame.draw.rect(screen, colours['dark_grey'], ( 618+35 + i * 16,215 + 10, 6, 50))
+        if i < aoa:
+            col = colours['green_blue']
+            if i > 9 and i <= 12:
+                col = colours['amber']
+            elif i > 12:
+                col = colours['red']
+            pygame.draw.rect(screen, col, ( 618+35 + i * 16,215 + 10, 6, 50))
+
+def draw_hdg_tape(hdg):
+
+    if hdg < 0:
+        hdg = hdg + 360
+
+    center_x = (81 + 500+81)/2
+    px_per_10_deg = 80
+
+    screen.set_clip((81, 215), (500, 70))
+    for i in range(0 - 3, 36 + 3 + 1):
+        number_x_pos = center_x + i * px_per_10_deg - (hdg/10) * px_per_10_deg
+        if within(number_x_pos, 81 - 50, 500 + 81 + 50):
+            pygame.draw.line(screen, colours['pearl'], (number_x_pos, 215) , (number_x_pos, 215+20), 2)
+            draw_text_xcentered(str((i%36)*10).zfill(3), fonts['helvetica'], colours['pearl'], number_x_pos, 240)
+            for j in range(1,10):
+                line_x_pos = number_x_pos + j*px_per_10_deg/10
+                if j != 5:
+                    pygame.draw.line(screen, colours['grey'], (line_x_pos, 215) , (line_x_pos, 215+10), 2)
+                else:
+                    pygame.draw.line(screen, colours['pearl'], (line_x_pos, 215) , (line_x_pos, 215+15), 2)
+
+    screen.set_clip(None)   
+    pygame.draw.line(screen, colours['light_blue'], (81, 215) , (81, 215+70), 2)
+    pygame.draw.line(screen, colours['light_blue'], (500+81, 215) , (500+81, 215+70), 2)
+    pygame.draw.line(screen, colours['light_blue'], (81, 215) , (500+81, 215), 2)
+
+    pygame.draw.rect(screen, colours['pearl'], ( center_x - 40-2, 215 + 13-2, 40*2+4, 45+4+4))
+    pygame.draw.rect(screen, colours['bgd'], ( center_x - 40, 215 + 13, 40*2, 45+4))
+    draw_text_xcentered(str(int(hdg)).zfill(3), fonts['helvetica_big'], colours['green'], center_x, 234)
+
+ap_on_time = time.time()
+def draw_ap_status(flag):
+    screen_w, screen_h = screen.get_size()
+    width = 700
+    height = 50
+    global ap_on_time
+    
+    if flag:
+        draw_rectangle(screen_w/2 - width/2, 135, width, height, colours['pearl'], 2)
+        pygame.draw.rect(screen, colours['green_blue'], ( screen_w/2 - width/2 + 4, 135 + 4, width - 6, height - 6))
+        draw_text_xcentered("))))     AP ACTIVE     ((((", fonts['dbxl'], colours['light_blue'], screen_w/2, 145)
+        ap_on_time = time.time()
+    else:
+        if time.time() - ap_on_time < 1:
+            draw_rectangle(screen_w/2 - width/2, 135, width, height, colours['pearl'], 2)
+            pygame.draw.rect(screen, colours['red'], ( screen_w/2 - width/2 + 4, 135 + 4, width - 6, height - 6))
+            draw_text_xcentered("((((    AP DISENGAGE    ))))", fonts['dbxl'], colours['pearl'], screen_w/2, 145)
 
 ## Below are the update loop and draw loop, they should always be at the bottom
 
@@ -635,15 +747,18 @@ def pygame_draw_loop(): #loop
     #print(input_commands['elevator'], input_commands['aileron'])
 
     draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
-    #draw_spd_tape(airplane_data['airspeed'])
-    draw_spd_tape(15*math.sin(time.time()/10)**2)
+    draw_spd_tape(airplane_data['airspeed'])
+    #draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()
     draw_refresh_rate()
     draw_log_sys()
     draw_ctrl_diag()
+    draw_aoa_bar(airplane_data['pitch'])
     stepper.draw()
     mouse_control.draw()
     draw_servo_diagnostic()
+    draw_hdg_tape(airplane_data['yaw'])
+    draw_ap_status(input_commands['ap_on'])
     draw_buttons()
 
     drawing_surface_center = screen.get_rect().center
