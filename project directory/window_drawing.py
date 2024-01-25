@@ -53,6 +53,7 @@ pygame.display.set_icon(textures['icon'])
 
 colours = {
     'white' : (255,255,255),
+    'light_grey'  : (255/1.3,255/1.3,255/1.3),
     'grey'  : (255/2,255/2,255/2),
     'dark_grey'  : (255/4,255/4,255/4),
     'black' : (0  ,0  ,0  ),
@@ -644,7 +645,6 @@ def draw_hdg_tape(hdg):
 
     if hdg < 0:
         hdg = hdg + 360
-
     center_x = (81 + 500+81)/2
     px_per_10_deg = 80
 
@@ -670,7 +670,35 @@ def draw_hdg_tape(hdg):
     pygame.draw.rect(screen, colours['bgd'], ( center_x - 40, 215 + 13, 40*2, 45+4))
     draw_text_xcentered(str(int(hdg)).zfill(3), fonts['helvetica_big'], colours['green'], center_x, 234)
 
-ap_on_time = time.time()
+    compass_center_x = (center_x - 245) + (45+4+4 + 10)/2
+    compass_center_y = 221 + (45+4+4 + 10)/2
+
+    triangle_width = 7
+    triangle_height = 26
+
+    pygame.draw.circle(screen, colours['light_blue'], (compass_center_x, compass_center_y), 31)
+    pygame.draw.circle(screen, colours['bgd'], (compass_center_x, compass_center_y), 29)
+
+    pygame.draw.line(screen, colours['light_grey'], (compass_center_x, compass_center_y + 20), (compass_center_x, compass_center_y + 29) , 2)
+    pygame.draw.line(screen, colours['light_grey'], (compass_center_x, compass_center_y - 20), (compass_center_x, compass_center_y - 29) , 2)
+    pygame.draw.line(screen, colours['light_grey'], (compass_center_x + 20, compass_center_y), (compass_center_x + 29, compass_center_y) , 2)
+    pygame.draw.line(screen, colours['light_grey'], (compass_center_x - 20, compass_center_y), (compass_center_x - 29, compass_center_y) , 2)
+
+    pygame.draw.polygon(screen, colours['red'], (
+        (compass_center_x + triangle_width*math.cos(math.radians(-hdg-180)), compass_center_y + triangle_width*math.sin(math.radians(-hdg-180))),
+        (compass_center_x + triangle_width*math.cos(math.radians((-hdg+180-180))), compass_center_y + triangle_width*math.sin(math.radians((-hdg+180-180)))),
+        (compass_center_x + triangle_height*math.cos(math.radians((-hdg+90-180))), compass_center_y + triangle_height*math.sin(math.radians((-hdg+90-180))))
+        )
+    )  
+    pygame.draw.polygon(screen, colours['light_grey'], (
+        (compass_center_x + triangle_width*math.cos(math.radians(-hdg)), compass_center_y + triangle_width*math.sin(math.radians(-hdg))),
+        (compass_center_x + triangle_width*math.cos(math.radians((-hdg+180))), compass_center_y + triangle_width*math.sin(math.radians((-hdg+180)))),
+        (compass_center_x + triangle_height*math.cos(math.radians((-hdg+90))), compass_center_y + triangle_height*math.sin(math.radians((-hdg+90))))
+        )
+    ) 
+    pygame.draw.circle(screen, colours['dark_grey'], (compass_center_x, compass_center_y), 4)
+
+ap_on_time = 0
 def draw_ap_status(flag):
     screen_w, screen_h = screen.get_size()
     width = 700
