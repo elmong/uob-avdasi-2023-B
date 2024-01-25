@@ -10,6 +10,7 @@ import csv
 import os
 import serial
 
+from math_helpers import *
 from global_var import *
 import GCS_serial_reader
 import pico_class
@@ -22,7 +23,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -83,6 +84,8 @@ class Servo:
                 self.val = max(self.prev_val-rate_limit, self.val)
             set_servo(connection, self.channel_num, self.val)
             self.prev_val = self.val
+    def get_val(self):
+        return self.val
 
 def set_param(connection, name, value, type):
     name = name.encode('utf8')
@@ -202,7 +205,7 @@ def update_refresh_rate():
     global last_time
     global DELTA_TIME
     DELTA_TIME = (time.time() - last_time)
-    DELTA_TIME = max(DELTA_TIME, 0.00001)
+    DELTA_TIME = max(DELTA_TIME, 0.000001)
     if DELTA_TIME > 0:
         refresh_rate = 1/DELTA_TIME
     else:
@@ -267,11 +270,14 @@ LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP)
 RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP)
 
 pitch_pid = Pid_controller(0.1, 0.0005, 0.0, (-1,1))
+flap_damper = SmoothDamp()
+prev_flap_angle = 0
 
 def flight_controller():
-    flap_angle = (input_commands['flap_setting']-1)
-
     if TESTING_REAL_PLANE_CHANNELS:
+        global prev_flap_angle
+        flap_angle = flap_damper.smooth_damp(prev_flap_angle, (input_commands['flap_setting']-1), 1.2, 1.5, DELTA_TIME)
+        prev_flap_angle = flap_angle
 
         LEFT_AILERON.set_val(input_commands['aileron'])
         RIGHT_AILERON.set_val(-input_commands['aileron'])
@@ -287,6 +293,14 @@ def flight_controller():
         RUDDER.set_val(0)
         LEFT_FLAP.set_val(-flap_angle * 0.4)
         RIGHT_FLAP.set_val(flap_angle)
+
+        control_surfaces['left_aileron']['servo_demand'] = LEFT_AILERON.get_val()
+        control_surfaces['left_flap']['servo_demand'] = LEFT_FLAP.get_val()
+        control_surfaces['right_aileron']['servo_demand'] = RIGHT_AILERON.get_val()
+        control_surfaces['right_flap']['servo_demand'] = RIGHT_FLAP.get_val()
+        control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
+        control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
+
 
 def mavlink_loop():
     fetch_messages_and_update()
@@ -309,6 +323,6 @@ while True:
     else:
         mavlink_loop()
         pygame_loop()
-        #pico_loop()
+        pico_loop()
     mavlink_logging()
 

@@ -159,6 +159,17 @@ def ap_on():
         input_commands.update(fd_on=True)
         fd_button.force_state(True)
 
+class ServoDisplay:
+    def __init__(self):
+        self.page_number = 1
+    def increase(self):
+        self.page_number += 1
+        self.page_number = min(self.page_number, 6)
+    def decrease(self):
+        self.page_number -= 1
+        self.page_number = max(self.page_number, 1)
+servo_display = ServoDisplay()
+
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
@@ -181,8 +192,8 @@ step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_titl
 page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
 page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
 
-page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
-page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
+page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
+page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
 
 ############  I love OOP
 
@@ -594,7 +605,6 @@ def draw_servo_diagnostic():
     draw_rectangle(939, 215, 545, 270, colours['light_blue'], 2)
     pygame.draw.line(screen, colours['light_blue'], (939, 215+30) , (939+545, 215+30), 2)
     pygame.draw.rect(screen, colours['light_blue'], (939,215,30,30))
-    draw_text("CTRL CLOSEUP", fonts['helvetica_small'], colours['pearl'], 978, 217)
 
     draw_rectangle( 1513,215,384,105, colours['light_blue'], 2)
     pygame.draw.line(screen, colours['light_blue'], (1513, 215+73) , (1513+384, 215+73), 2)
@@ -606,6 +616,39 @@ def draw_servo_diagnostic():
 
     servo_angle = 0
     surface_angle = 0
+    servo_demand = 0
+    title = "CTRL "
+
+    match servo_display.page_number:
+        case 1:
+            surface_angle = control_surfaces['left_aileron']['angle_degrees']
+            servo_demand = control_surfaces['left_aileron']['servo_demand']
+            title += "- L AILERON"
+        case 2:
+            surface_angle = control_surfaces['left_flap']['angle_degrees']
+            servo_demand = control_surfaces['left_flap']['servo_demand']
+            title += "- L FLAP"
+        case 3:
+            surface_angle = control_surfaces['right_aileron']['angle_degrees']
+            servo_demand = control_surfaces['right_aileron']['servo_demand']
+            title += "- R AILERON"
+        case 4:
+            surface_angle = control_surfaces['right_flap']['angle_degrees']
+            servo_demand = control_surfaces['right_flap']['servo_demand']
+            title += "- R FLAP"
+        case 5:
+            surface_angle = control_surfaces['elevator']['angle_degrees']
+            servo_demand = control_surfaces['elevator']['servo_demand']
+            title += "- ELEVATOR"
+        case 6:
+            surface_angle = control_surfaces['rudder']['angle_degrees']
+            servo_demand = control_surfaces['rudder']['servo_demand']
+            title += "- RUDDER"
+    
+    servo_angle = servo_demand * 45
+    servo_demand = 1500 + servo_demand * 500
+
+    draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
 
     draw_image_centered_rotated(textures['servo_arm'], 1099, 370, servo_angle)
 
@@ -617,11 +660,11 @@ def draw_servo_diagnostic():
     draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(servo_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237)
     draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302)
 
-    draw_text("// HALL SENSR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
+    draw_text("// HALL SENSOR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
     draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
     draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
 
-    draw_text_centered("PWM: 1500", fonts['dbxl_title'], colours['green_blue'], 1070, 420)
+    draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['green_blue'], 1070, 420)
 
 def draw_aoa_bar(aoa):
     draw_rectangle(614, 215, 280, 70, colours['light_blue'], 2)

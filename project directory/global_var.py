@@ -24,6 +24,37 @@ input_commands = {
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
 }
 
+servo_input_pwm = {
+
+}
+
+control_surfaces = {
+    "left_aileron": {
+        "servo_demand": 0,
+        "angle_degrees": 0
+    },
+    "left_flap": {
+        "servo_demand": 0,
+        "angle_degrees": 0
+    },
+    "right_aileron": {
+        "servo_demand": 0,
+        "angle_degrees": 0
+    },
+    "right_flap": {
+        "servo_demand": 0,
+        "angle_degrees": 0
+    },
+    "elevator": {
+        "servo_demand": 0,
+        "angle_degrees": 0
+    },
+    "rudder": {
+        "servo_demand": 0,
+        "angle_degrees": 0
+    }
+}
+
 ui_commands = {
     'logging' : False,
 }
