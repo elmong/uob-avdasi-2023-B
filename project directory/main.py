@@ -13,6 +13,7 @@ import serial
 from global_var import *
 import GCS_serial_reader
 import pico_class
+from PID import *
 
 import window_drawing
 
@@ -20,11 +21,12 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = True
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_ON_SIM = False
+TESTING_GRAPHICS_ONLY = False
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
+DELTA_TIME = 0.01
 SUICIDE = False
 
 ################################
@@ -71,10 +73,10 @@ class Servo:
         self.channel_num = channel_num
         self.prev_set_time = time.time()
     def set_val(self, val):
-        rate_limit = 0.04
+        rate_limit = 0.1
         if (time.time() - self.prev_set_time) > 0:
             self.val = val
-            print((self.val, self.prev_val))
+            #print((self.val, self.prev_val))
             if (self.val - self.prev_val) > 0:
                 self.val = min(self.prev_val + rate_limit, self.val)
             else:
@@ -187,7 +189,7 @@ def connect_picos():
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
         item.read_message()
-        print(angle_sensor_data_live['sensor2'])
+        # print(angle_sensor_data_live['sensor2'])
 
 
 ################################ LAND OF PREVIOUS VALUES
@@ -198,8 +200,11 @@ last_time = time.time()
 
 def update_refresh_rate():
     global last_time
-    if (time.time() - last_time) > 0:
-        refresh_rate = 1/(time.time() - last_time)
+    global DELTA_TIME
+    DELTA_TIME = (time.time() - last_time)
+    DELTA_TIME = max(DELTA_TIME, 0.00001)
+    if DELTA_TIME > 0:
+        refresh_rate = 1/DELTA_TIME
     else:
         refresh_rate = 0
     airplane_data['refresh_rate'] = refresh_rate
@@ -254,14 +259,14 @@ def fetch_messages_and_update():
     #     sys_status=msg.to_dict()
     #     print(sys_status['drop_rate_comm'])
 
-    input_commands['fd_pitch'] = -airplane_data['pitch']
-
 LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON)
 RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON)
 ELEVATOR = Servo(CHANNEL_ELEVATOR)
 RUDDER = Servo(CHANNEL_RUDDER)
 LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP)
 RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP)
+
+pitch_pid = Pid_controller(0.1, 0.0005, 0.0, (-1,1))
 
 def flight_controller():
     flap_angle = (input_commands['flap_setting']-1)
@@ -270,7 +275,15 @@ def flight_controller():
 
         LEFT_AILERON.set_val(input_commands['aileron'])
         RIGHT_AILERON.set_val(-input_commands['aileron'])
-        ELEVATOR.set_val(-input_commands['elevator'])
+
+        if not input_commands['ap_on']:
+            ELEVATOR.set_val(-input_commands['elevator'])
+            input_commands['pitch_pid'] = 0
+            pitch_pid.integrator = 0
+        else:
+            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME)
+            input_commands['pitch_pid'] = cmd
+            ELEVATOR.set_val(-cmd)
         RUDDER.set_val(0)
         LEFT_FLAP.set_val(-flap_angle * 0.4)
         RIGHT_FLAP.set_val(flap_angle)
@@ -296,6 +309,6 @@ while True:
     else:
         mavlink_loop()
         pygame_loop()
-        pico_loop()
+        #pico_loop()
     mavlink_logging()
 

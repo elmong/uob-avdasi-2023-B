@@ -603,8 +603,8 @@ def draw_servo_diagnostic():
 
     draw_image_centered(textures['servo'], 1070, 371)
 
-    servo_angle = math.sin(time.time())*45
-    surface_angle = math.sin(time.time())*45
+    servo_angle = 0
+    surface_angle = 0
 
     draw_image_centered_rotated(textures['servo_arm'], 1099, 370, servo_angle)
 
@@ -746,7 +746,7 @@ def pygame_draw_loop(): #loop
     # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
     #print(input_commands['elevator'], input_commands['aileron'])
 
-    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['fd_pitch'])
+    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid']*30)
     draw_spd_tape(airplane_data['airspeed'])
     #draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()

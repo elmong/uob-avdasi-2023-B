@@ -2,7 +2,7 @@ import csv
 import matplotlib.pyplot as plt
 
 # Assuming your CSV file has two columns, and the file is named 'data.csv'
-csv_file_path = '2024-01-07_23-17-54.csv'
+csv_file_path = '2024-01-25_11-02-04.csv'
 
 # Lists to store the data from each column
 

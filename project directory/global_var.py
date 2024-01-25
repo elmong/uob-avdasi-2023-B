@@ -20,6 +20,7 @@ input_commands = {
     'fd_on' : False,
     'ap_on' : False,
     'fd_pitch': 0,
+    'pitch_pid': 0,
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
 }
 
