@@ -621,27 +621,27 @@ def draw_servo_diagnostic():
 
     match servo_display.page_number:
         case 1:
-            surface_angle = control_surfaces['left_aileron']['angle_degrees']
+            surface_angle = control_surfaces['left_aileron']['angle']
             servo_demand = control_surfaces['left_aileron']['servo_demand']
             title += "- L AILERON"
         case 2:
-            surface_angle = control_surfaces['left_flap']['angle_degrees']
+            surface_angle = control_surfaces['left_flap']['angle']
             servo_demand = control_surfaces['left_flap']['servo_demand']
             title += "- L FLAP"
         case 3:
-            surface_angle = control_surfaces['right_aileron']['angle_degrees']
+            surface_angle = control_surfaces['right_aileron']['angle']
             servo_demand = control_surfaces['right_aileron']['servo_demand']
             title += "- R AILERON"
         case 4:
-            surface_angle = control_surfaces['right_flap']['angle_degrees']
+            surface_angle = control_surfaces['right_flap']['angle']
             servo_demand = control_surfaces['right_flap']['servo_demand']
             title += "- R FLAP"
         case 5:
-            surface_angle = control_surfaces['elevator']['angle_degrees']
+            surface_angle = control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
             title += "- ELEVATOR"
         case 6:
-            surface_angle = control_surfaces['rudder']['angle_degrees']
+            surface_angle = control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
             title += "- RUDDER"
     

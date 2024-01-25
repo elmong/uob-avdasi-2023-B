@@ -13,8 +13,6 @@ class Pico:
         self.COM_port = com_port
         self.Actual_id = actual_id #this is the actual ID of the pico
 
-        print("Hi Init")
-
     def __str__(self): #returns object as a string
         return str(str(self.Local_ID) + str(self.Connection) + str(self.Connection_status) + str(self.COM_port) + str(self.Actual_id))
 

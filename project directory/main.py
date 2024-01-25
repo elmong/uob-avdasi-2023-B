@@ -294,17 +294,19 @@ def flight_controller():
         LEFT_FLAP.set_val(-flap_angle * 0.4)
         RIGHT_FLAP.set_val(flap_angle)
 
-        control_surfaces['left_aileron']['servo_demand'] = LEFT_AILERON.get_val()
-        control_surfaces['left_flap']['servo_demand'] = LEFT_FLAP.get_val()
-        control_surfaces['right_aileron']['servo_demand'] = RIGHT_AILERON.get_val()
-        control_surfaces['right_flap']['servo_demand'] = RIGHT_FLAP.get_val()
-        control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
-        control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
+def update_servo_commands():
+    control_surfaces['left_aileron']['servo_demand'] = LEFT_AILERON.get_val()
+    control_surfaces['left_flap']['servo_demand'] = LEFT_FLAP.get_val()
+    control_surfaces['right_aileron']['servo_demand'] = RIGHT_AILERON.get_val()
+    control_surfaces['right_flap']['servo_demand'] = RIGHT_FLAP.get_val()
+    control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
+    control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
 
 
 def mavlink_loop():
     fetch_messages_and_update()
     flight_controller()
+    update_servo_commands()
     update_refresh_rate()
 
 def pygame_loop():
