@@ -197,15 +197,6 @@ page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['
 
 ############  I love OOP
 
-DELTA_TIME = 0.1
-delta_time_record = time.time()
-def GET_DELTA_TIME():
-    global delta_time_record
-    global DELTA_TIME
-    current_time = time.time()
-    DELTA_TIME = current_time - delta_time_record
-    delta_time_record = current_time
-
 def draw_line(coord_1, coord_2, width, colour):
     pygame.draw.line(screen, colour, coord_1, coord_2, width)
 
@@ -398,8 +389,8 @@ def draw_spd_tape(spd):
     draw_line((80, 783), (180, 783), 2, colours['light_blue'])
 
     global prev_spd
-    spd = spd_damper.smooth_damp(prev_spd, spd, 0.5, 50, DELTA_TIME)
-    spd_trend = (spd - prev_spd)/DELTA_TIME
+    spd = spd_damper.smooth_damp(prev_spd, spd, 0.5, 50, pygame_loop_timer.DELTA_TIME)
+    spd_trend = (spd - prev_spd)/pygame_loop_timer.DELTA_TIME
     prev_spd = spd
 
     # the tape
@@ -539,13 +530,21 @@ def draw_menu():
     draw_text_xcentered('SYSTEM MENU ACCESS', fonts['dbxl_small'], colours['pearl'], 1920/2, 92)
 
 def draw_refresh_rate():
-    rate = airplane_data['refresh_rate']
+    rate = airplane_data['mavlink_refresh_rate']
     if rate > 25:
-        pygame.draw.rect(screen, colours['green_blue'], (20,96,min(rate, 190),7))
-        draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['green_blue'], 20, 80)
+        pygame.draw.rect(screen, colours['green_blue'], (20,96,min(rate, 133),7))
+        draw_text( 'MAVLINK : ' + str(int(rate)), fonts['dbxl_small'], colours['green_blue'], 20, 80)
     else:
-        pygame.draw.rect(screen, colours['red'], (20,96,min(rate, 190),7))
-        draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
+        pygame.draw.rect(screen, colours['red'], (20,96,min(rate, 133),7))
+        draw_text( 'MAVLINK : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
+    
+    rate2 = airplane_data['pico_refresh_rate']
+    if rate2 > 25:
+        pygame.draw.rect(screen, colours['green_blue'], (210,96,min(rate2, 133),7))
+        draw_text( 'PICO DATA : ' + str(int(rate2)), fonts['dbxl_small'], colours['green_blue'], 210, 80)
+    else:
+        pygame.draw.rect(screen, colours['red'], (210,96,min(rate2, 133),7))
+        draw_text( 'PICO DATA : ' + str(int(rate2)), fonts['dbxl_small'], colours['red'], 210, 80)
 
 class MouseControl():
     def __init__(self):
@@ -575,8 +574,8 @@ class MouseControl():
             pitch_command = lerp((self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), (-1 * self.cursor_ctrl_boost_factor , 1 * self.cursor_ctrl_boost_factor), MOUSE_Y)
             pitch_command = clamper(pitch_command, -1, 1)
     
-        input_commands['elevator'] = self.elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
-        input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
+        input_commands['elevator'] = self.elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
+        input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
     
     def draw(self):
         draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['grey'], 4)
@@ -739,7 +738,6 @@ def draw_hdg_tape(hdg):
         (compass_center_x + triangle_height*math.cos(math.radians((-hdg+90))), compass_center_y + triangle_height*math.sin(math.radians((-hdg+90))))
         )
     ) 
-    pygame.draw.circle(screen, colours['dark_grey'], (compass_center_x, compass_center_y), 4)
 
 ap_on_time = 0
 def draw_ap_status(flag):
@@ -764,6 +762,8 @@ def draw_ap_status(flag):
 def draw_buttons():
     for button in Button.instances:
         button.draw()
+
+pygame_loop_timer = Timer()
 
 def pygame_update_loop():
     mouse_beforetransform_x, mouse_beforetransform_y = pygame.mouse.get_pos()
@@ -803,7 +803,7 @@ def pygame_update_loop():
     for button in Button.instances:
         button.check_hot(MOUSE_X, MOUSE_Y)
 
-    GET_DELTA_TIME() # should come before anything else
+    pygame_loop_timer.update() # should come before anything else
     mouse_control.update()
     stepper.update()
     

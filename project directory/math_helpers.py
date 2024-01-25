@@ -1,3 +1,5 @@
+import time
+
 def lerp(point1, point2, x): # a helper
     x1, x2 = point1
     y1, y2 = point2
@@ -65,3 +67,36 @@ class Interpolator:
                     x2, y2 = self.points[i + 1]
                     # Linear interpolation formula
                     return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+
+class Timer:
+    def __init__(self):
+        self.last_time = time.time()
+        self.DELTA_TIME = 0.000001
+        self.refresh_rate = 0
+
+    def update(self):
+        current_time = time.time()
+        self.DELTA_TIME = max(current_time - self.last_time, 0.000001)
+        self.refresh_rate = 1 / self.DELTA_TIME if self.DELTA_TIME > 0 else 0
+        self.last_time = current_time
+
+    def get_refresh_rate(self):
+        return self.refresh_rate
+
+class MovingAverage:
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.values = []
+
+    def update(self, new_value):
+        self.values.append(new_value)
+
+        # Remove the oldest value if the window size is exceeded
+        if len(self.values) > self.window_size:
+            self.values.pop(0)
+
+    def get_value(self):
+        if not self.values:
+            return None  # Return None if no values in the filter
+
+        return sum(self.values) / len(self.values)

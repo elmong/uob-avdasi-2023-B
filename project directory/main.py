@@ -22,8 +22,8 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = True
+TESTING_ON_SIM = True
+TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -201,19 +201,12 @@ last_time = time.time()
 
 ############################### THE LOOPING STUFF
 
-def update_refresh_rate():
-    global last_time
-    global DELTA_TIME
-    DELTA_TIME = (time.time() - last_time)
-    DELTA_TIME = max(DELTA_TIME, 0.000001)
-    if DELTA_TIME > 0:
-        refresh_rate = 1/DELTA_TIME
-    else:
-        refresh_rate = 0
-    airplane_data['refresh_rate'] = refresh_rate
-    last_time = time.time()
-    # if refresh_rate < 25:
-    #     print("WARNING REFRESH RATE TOO LOW: " + str(int(refresh_rate)))
+import time
+
+mavlink_loop_timer = Timer()
+pico_loop_timer = Timer()
+mavlink_loop_rate_filter = MovingAverage(20)
+pico_loop_rate_filter = MovingAverage(5)
 
 def fetch_messages_and_update():
 
@@ -276,7 +269,7 @@ prev_flap_angle = 0
 def flight_controller():
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
-        flap_angle = flap_damper.smooth_damp(prev_flap_angle, (input_commands['flap_setting']-1), 1.2, 1.5, DELTA_TIME)
+        flap_angle = flap_damper.smooth_damp(prev_flap_angle, (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
         LEFT_AILERON.set_val(input_commands['aileron'])
@@ -287,7 +280,7 @@ def flight_controller():
             input_commands['pitch_pid'] = 0
             pitch_pid.integrator = 0
         else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME)
+            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], mavlink_loop_timer.DELTA_TIME)
             input_commands['pitch_pid'] = cmd
             ELEVATOR.set_val(-cmd)
         RUDDER.set_val(0)
@@ -302,29 +295,51 @@ def update_servo_commands():
     control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
     control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
 
+def not_async_pygame_loop(): ## For the sake of debugging with graphics only.
+    while True:
+        window_drawing.pygame_draw_loop()
+        window_drawing.pygame_update_loop()
 
-def mavlink_loop():
-    fetch_messages_and_update()
-    flight_controller()
-    update_servo_commands()
-    update_refresh_rate()
+async def pygame_loop():
+    while True:
+        window_drawing.pygame_draw_loop()
+        window_drawing.pygame_update_loop()
+        await asyncio.sleep(0)
 
-def pygame_loop():
-    window_drawing.pygame_draw_loop()
-    window_drawing.pygame_update_loop()
+async def mavlink_loop():
+    while True:
+        fetch_messages_and_update()
+        flight_controller()
+        update_servo_commands()
+
+        mavlink_loop_timer.update()
+        mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())
+        airplane_data['mavlink_refresh_rate'] = mavlink_loop_rate_filter.get_value()
+        
+        mavlink_logging()
+        await asyncio.sleep(0)
 
 connect_picos()
-def pico_loop(): #where all of the pico's events are handled
-    collect_pico_msgs()
-    
+async def pico_loop(): #where all of the pico's events are handled
+    while True:
+        collect_pico_msgs()
 
-while True:
+        pico_loop_timer.update()
+        pico_loop_rate_filter.update(pico_loop_timer.get_refresh_rate())
+        airplane_data['pico_refresh_rate'] = pico_loop_rate_filter.get_value()
+        await asyncio.sleep(0)
 
-    if TESTING_GRAPHICS_ONLY:
-        pygame_loop()
-    else:
-        mavlink_loop()
-        pygame_loop()
-        pico_loop()
-    mavlink_logging()
+async def async_loop():
+    task1 = asyncio.create_task(mavlink_loop())
+    task2 = asyncio.create_task(pygame_loop())
+    task3 = asyncio.create_task(pico_loop())
+    await asyncio.gather(task1, task2, task3)
+
+if TESTING_GRAPHICS_ONLY:
+    while True:
+        not_async_pygame_loop()
+else:
+    asyncio.run(async_loop())
+
+
 

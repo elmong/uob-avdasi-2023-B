@@ -9,7 +9,8 @@ airplane_data = {
     'yaw_rate': 0,
     'aoa': 0,
     'airspeed': 0,
-    'refresh_rate': 0,
+    'mavlink_refresh_rate': 0,
+    'pico_refresh_rate': 0,
 }
     
 input_commands = {
