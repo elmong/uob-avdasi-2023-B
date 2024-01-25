@@ -1,3 +1,5 @@
+# COMPANY A STOP LOOKING AT OUR CODE:
+
 project directory/ is where most of the thing happens
 
 Control surfaces system:
