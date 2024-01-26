@@ -174,7 +174,7 @@ servo_display = ServoDisplay()
 quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
 arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
-button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 1")
+button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
 button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 5")
 fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
@@ -389,7 +389,7 @@ def draw_spd_tape(spd):
     draw_line((80, 783), (180, 783), 2, colours['light_blue'])
 
     global prev_spd
-    spd = spd_damper.smooth_damp(prev_spd, spd, 0.5, 50, pygame_loop_timer.DELTA_TIME)
+    spd = spd_damper.smooth_damp(spd, 0.5, 50, pygame_loop_timer.DELTA_TIME)
     spd_trend = (spd - prev_spd)/pygame_loop_timer.DELTA_TIME
     prev_spd = spd
 
@@ -574,8 +574,8 @@ class MouseControl():
             pitch_command = lerp((self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), (-1 * self.cursor_ctrl_boost_factor , 1 * self.cursor_ctrl_boost_factor), MOUSE_Y)
             pitch_command = clamper(pitch_command, -1, 1)
     
-        input_commands['elevator'] = self.elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
-        input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
+        input_commands['elevator'] = self.elevator_damper.smooth_damp(pitch_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
+        input_commands['aileron'] = self.aileron_damper.smooth_damp(roll_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
     
     def draw(self):
         draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['grey'], 4)
@@ -817,7 +817,7 @@ def pygame_draw_loop(): #loop
     # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
     #print(input_commands['elevator'], input_commands['aileron'])
 
-    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid']*30)
+    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid']*10)
     draw_spd_tape(airplane_data['airspeed'])
     #draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()

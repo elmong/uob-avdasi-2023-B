@@ -22,7 +22,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = True
+TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
@@ -241,6 +241,10 @@ def fetch_messages_and_update():
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
 
+        mavlink_loop_timer.update() # Move the counter to the not none loop
+        mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())
+        airplane_data['mavlink_refresh_rate'] = mavlink_loop_rate_filter.get_value()
+
     aoa_ssa = connection.recv_match(type = 'AOA_SSA')
     if aoa_ssa is not None:
         aoa_ssa = aoa_ssa.to_dict()
@@ -262,26 +266,31 @@ RUDDER = Servo(CHANNEL_RUDDER)
 LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP)
 RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP)
 
-pitch_pid = Pid_controller(0.1, 0.0005, 0.0, (-1,1))
+pitch_pid = Pid_controller(0.1, 0.000, 0.06, (-1,1), 10)
 flap_damper = SmoothDamp()
+aileron_damper = SmoothDamp()
 prev_flap_angle = 0
+prev_aileron_angle = 0
 
 def flight_controller():
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
-        flap_angle = flap_damper.smooth_damp(prev_flap_angle, (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME)
+        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
-        LEFT_AILERON.set_val(input_commands['aileron'])
-        RIGHT_AILERON.set_val(-input_commands['aileron'])
+        global prev_aileron_angle
+        aileron_angle = aileron_damper.smooth_damp( input_commands['aileron'], 0.5, 1.5, mavlink_loop_timer.DELTA_TIME)
+        prev_aileron_angle = aileron_angle
+        LEFT_AILERON.set_val(aileron_angle)
+        RIGHT_AILERON.set_val(-aileron_angle)
 
+        cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], mavlink_loop_timer.DELTA_TIME)
+        input_commands['pitch_pid'] = pitch_pid.output_unclamped
         if not input_commands['ap_on']:
             ELEVATOR.set_val(-input_commands['elevator'])
             input_commands['pitch_pid'] = 0
             pitch_pid.integrator = 0
         else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], mavlink_loop_timer.DELTA_TIME)
-            input_commands['pitch_pid'] = cmd
             ELEVATOR.set_val(-cmd)
         RUDDER.set_val(0)
         LEFT_FLAP.set_val(-flap_angle * 0.4)
@@ -308,13 +317,13 @@ async def pygame_loop():
 
 async def mavlink_loop():
     while True:
+        if ui_commands['force_refresh'] == 1:
+            print('Force Refresh')
+            request_refresh_rate(connection, mav_commands)
+            ui_commands['force_refresh'] = 0
         fetch_messages_and_update()
         flight_controller()
         update_servo_commands()
-
-        mavlink_loop_timer.update()
-        mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())
-        airplane_data['mavlink_refresh_rate'] = mavlink_loop_rate_filter.get_value()
         
         mavlink_logging()
         await asyncio.sleep(0)

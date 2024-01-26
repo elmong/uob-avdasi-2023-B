@@ -58,6 +58,7 @@ control_surfaces = {
 
 ui_commands = {
     'logging' : False,
+    'force_refresh': 0, # This is to force the refresh rate back to speed after a current kill
 }
 
 #Ports/connection addresses used
