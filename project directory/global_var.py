@@ -65,7 +65,7 @@ ui_commands = {
 coms_ports = {
     #pico# does not have to match pico ID, just generic assignment of ports to picos
     'pico0' : 'COM6',
-    'pico1' : 'COM13',
+    'pico1' : 'COM8',
     'pico2' : 'COM13',
     'pico3' : 'COM13',
     'pico4' : 'COM13',

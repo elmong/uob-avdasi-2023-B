@@ -174,14 +174,14 @@ if not TESTING_GRAPHICS_ONLY:
 
 #declare pico objects
 pico0 = pico_class.Pico(0, None , False, coms_ports['pico0'], -1)
-#pico1 = pico_class.Pico(1, None , False, coms_ports['pico1'], None)
-#pico2 = pico_class.Pico(2, None , False, coms_ports['pico2'], None)
-#pico3 = pico_class.Pico(3, None , False, coms_ports['pico3'], None)
-#pico4 = pico_class.Pico(4, None , False, coms_ports['pico4'], None)
-#pico5 = pico_class.Pico(5, None , False, coms_ports['pico5'], None)
+pico1 = pico_class.Pico(1, None , False, coms_ports['pico1'], None)
+pico2 = pico_class.Pico(2, None , False, coms_ports['pico2'], None)
+pico3 = pico_class.Pico(3, None , False, coms_ports['pico3'], None)
+pico4 = pico_class.Pico(4, None , False, coms_ports['pico4'], None)
+pico5 = pico_class.Pico(5, None , False, coms_ports['pico5'], None)
 
-#pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
-pico_array = [pico0]
+pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
+#pico_array = [pico0]
 
 def connect_picos():
     #if pico connections are closed, attempt connection
