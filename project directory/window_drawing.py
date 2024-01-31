@@ -179,6 +179,20 @@ class PicoDisplay:
     def decrease(self):
         self.page_number -= 1
         self.page_number = max(self.page_number, 1)
+    def increase_com(self):
+        pico_number = str(self.page_number-1)
+        pico_com = coms_ports['pico'+pico_number]
+        pico_com_num = int(pico_com.lstrip('COM')) +1
+        coms_ports['pico'+pico_number] = 'COM' + str(pico_com_num)
+    def decrease_com(self):
+        pico_number = str(self.page_number-1)
+        pico_com = coms_ports['pico'+pico_number]
+        pico_com_num = int(pico_com.lstrip('COM')) -1
+        pico_com_num = max(0, pico_com_num)
+        coms_ports['pico'+pico_number] = 'COM' + str(pico_com_num)
+        
+
+
 pico_display = PicoDisplay()
 
 ############ The land of button creation
@@ -187,7 +201,7 @@ pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl
 arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
 button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
-button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 5")
+pico_com_refresh_button = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PICO RFSH", callback = lambda: ui_commands.update(pico_refresh_com=1))
 fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
 ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = ap_on) 
 
@@ -203,8 +217,8 @@ step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_titl
 page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = pico_display.increase) 
 page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = pico_display.decrease) 
 
-pico1_up_button = Button(1002, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up") 
-pico1_up_button = Button(1002, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn") 
+pico_up_button = Button(1002, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
+pico_dn_button = Button(1002, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
@@ -319,6 +333,10 @@ def draw_log_sys():
     draw_line((510, 825+30), (1182, 825+30), 2, colours['light_blue'])
     pygame.draw.rect(screen, colours['light_blue'], (510,825,30,30))
     draw_text("PICO CONFIG - PICO "+str(pico_display.page_number-1), fonts['helvetica_small'], colours['pearl'], 550, 827)
+    
+    buff = coms_ports['pico'+str(pico_display.page_number-1)]
+
+    draw_text(buff, fonts['helvetica_massive'],  colours['pearl'],800, 900)
     # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted

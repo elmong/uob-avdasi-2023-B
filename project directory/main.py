@@ -23,7 +23,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = True
+TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -186,8 +186,9 @@ pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
 def connect_picos():
     #if pico connections are closed, attempt connection
     for item in pico_array:
-        if item.Connection_status == False:
-            item.initialize_connection()
+        item.close_connection()
+        item.initialize_connection()
+
 
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
@@ -281,7 +282,15 @@ def flight_controller():
         global prev_aileron_angle
         aileron_angle = aileron_damper.smooth_damp( input_commands['aileron'], 0.5, 1.5, mavlink_loop_timer.DELTA_TIME)
         prev_aileron_angle = aileron_angle
-        LEFT_AILERON.set_val(aileron_angle)
+
+        l_ail_demand_ang = 0
+        if aileron_angle >= 0:
+            l_ail_demand_ang = aileron_angle * 0.85
+        else:
+            l_ail_demand_ang = aileron_angle
+        l_ail_demand_ang -= 0.1
+        
+        LEFT_AILERON.set_val(l_ail_demand_ang)
         RIGHT_AILERON.set_val(-aileron_angle)
 
         cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], mavlink_loop_timer.DELTA_TIME)
@@ -332,6 +341,10 @@ connect_picos()
 async def pico_loop(): #where all of the pico's events are handled
     while True:
         collect_pico_msgs()
+
+        if ui_commands['pico_refresh_com'] == 1:
+            connect_picos()
+            ui_commands['pico_refresh_com'] = 0
 
         pico_loop_timer.update()
         pico_loop_rate_filter.update(pico_loop_timer.get_refresh_rate())
