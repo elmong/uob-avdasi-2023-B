@@ -170,6 +170,17 @@ class ServoDisplay:
         self.page_number = max(self.page_number, 1)
 servo_display = ServoDisplay()
 
+class PicoDisplay:
+    def __init__(self):
+        self.page_number = 1
+    def increase(self):
+        self.page_number += 1
+        self.page_number = min(self.page_number, 6)
+    def decrease(self):
+        self.page_number -= 1
+        self.page_number = max(self.page_number, 1)
+pico_display = PicoDisplay()
+
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
@@ -189,8 +200,11 @@ flaps_up_button.force_state(True) # by default is up
 
 step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
-page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
-page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
+page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = pico_display.increase) 
+page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = pico_display.decrease) 
+
+pico1_up_button = Button(1002, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up") 
+pico1_up_button = Button(1002, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn") 
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
@@ -304,7 +318,7 @@ def draw_log_sys():
     draw_rectangle(510, 825, 1182-510, 1000-825, colours['light_blue'], 2)
     draw_line((510, 825+30), (1182, 825+30), 2, colours['light_blue'])
     pygame.draw.rect(screen, colours['light_blue'], (510,825,30,30))
-    draw_text("LOGGING SYSTEM", fonts['helvetica_small'], colours['pearl'], 550, 827)
+    draw_text("PICO CONFIG - PICO "+str(pico_display.page_number-1), fonts['helvetica_small'], colours['pearl'], 550, 827)
     # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
