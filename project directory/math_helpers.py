@@ -85,6 +85,17 @@ class Timer:
     def get_refresh_rate(self):
         return self.refresh_rate
 
+class Stopwatch:
+    def __init__(self):
+        self.start_time = 0
+    def get_time(self):
+        return time.time() - self.start_time
+    def start(self):
+        self.start_time = time.time()
+
+    def reset(self):
+        self.start_time = 0
+
 class MovingAverage:
     def __init__(self, window_size):
         self.window_size = window_size
