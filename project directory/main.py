@@ -40,6 +40,7 @@ CHANNEL_ELEVATOR = 5
 CHANNEL_RUDDER = 6
 
 SERVO_BOOTUP_INTEVRAL = 0.5
+SERVO_BOOTUP_TIME_TOTAL = 4
 
 ################################
 
@@ -79,7 +80,7 @@ class Servo:
     def set_val(self, val):
         bootup_timer = flight_elapsed_time.get_time()
         rate_limit = 0.1
-        if bootup_timer < 4:
+        if bootup_timer < SERVO_BOOTUP_TIME_TOTAL:
             rate_limit = 0.02
         if (time.time() - self.prev_set_time) > 0 and (bootup_timer > self.channel_num*SERVO_BOOTUP_INTEVRAL):
             self.val = val
