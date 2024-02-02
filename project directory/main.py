@@ -23,8 +23,8 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_GRAPHICS_ONLY = True
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
@@ -193,7 +193,7 @@ def connect_picos():
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
         item.read_message()
-        # print(angle_sensor_data_live['sensor2'])
+        print(angle_sensor_data_live)
 
 
 ################################ LAND OF PREVIOUS VALUES

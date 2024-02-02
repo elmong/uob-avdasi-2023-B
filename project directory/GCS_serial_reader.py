@@ -21,9 +21,9 @@ def Unpacker(msg):
     #_______________________________________________________#
     #data packets are structured, 
     #[0] is the ID of the Sensor, where 
-    #   0 is the sensor connected to --- (ADC1) & --- (ADC2)
-    #   1 is the sensor connected to --- (ADC1) & --- (ADC2)
-    #   2 is the sensor connected to --- (ADC1) & --- (ADC2)
+    #   0 is the sensor connected to Elevator (ADC1) & Rudder (ADC2)
+    #   1 is the sensor connected to PAileron (ADC1) & PFlap (ADC2)
+    #   2 is the sensor connected to SAileron (ADC1) & SFlap (ADC2)
     #   3 is the sensor connected to --- (ADC1) & --- (ADC2)
     #   4 is the sensor connected to --- (ADC1) & --- (ADC2)
     #   5 is the sensor connected to --- (ADC1) & --- (ADC2)
@@ -50,14 +50,14 @@ def Unpacker(msg):
     #update values in global variables
     match msgArray[0]: 
         case '0':
-            angle_sensor_data_live['sensor1'] = msgArray[2]
-            angle_sensor_data_live['sensor2'] = msgArray[3]
+            angle_sensor_data_live['elevator'] = msgArray[2]
+            angle_sensor_data_live['rudder'] = msgArray[3]
         case '1':
-            angle_sensor_data_live['sensor3'] = msgArray[2]
-            angle_sensor_data_live['sensor4'] = msgArray[3]
+            angle_sensor_data_live['paileron'] = msgArray[2]
+            angle_sensor_data_live['pflap'] = msgArray[3]
         case '2':
-            angle_sensor_data_live['sensor5'] = msgArray[2]
-            angle_sensor_data_live['sensor6'] = msgArray[3]
+            angle_sensor_data_live['saileron'] = msgArray[2]
+            angle_sensor_data_live['sflap'] = msgArray[3]
         case '3':
             angle_sensor_data_live['sensor7'] = msgArray[2]
             angle_sensor_data_live['sensor8'] = msgArray[3]

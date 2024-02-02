@@ -88,12 +88,12 @@ serial_reader_msg_size = 32
 
 #Sensor Data
 angle_sensor_data_live = {
-    'sensor1' : 0,
-    'sensor2' : 0,
-    'sensor3' : 0,
-    'sensor4' : 0,
-    'sensor5' : 0,
-    'sensor6' : 0,
+    'elevator' : 0,
+    'rudder' : 0,
+    'paileron' : 0,
+    'pflap' : 0,
+    'saileron' : 0,
+    'sflap' : 0,
     'sensor7' : 0,
     'sensor8' : 0,
     'sensor9' : 0,
