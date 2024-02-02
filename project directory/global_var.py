@@ -25,10 +25,6 @@ input_commands = {
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
 }
 
-servo_input_pwm = {
-
-}
-
 control_surfaces = {
     "left_aileron": {
         "servo_demand": 0,

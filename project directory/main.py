@@ -39,6 +39,9 @@ CHANNEL_RIGHT_FLAP = 4
 CHANNEL_ELEVATOR = 5
 CHANNEL_RUDDER = 6
 
+SERVO_BOOTUP_INTEVRAL = 0.5
+SERVO_BOOTUP_TIME_TOTAL = 4
+
 ################################
 
 # Refresh rate request
@@ -55,27 +58,31 @@ def request_refresh_rate(connection, mav_commands):
                 0  # target address
                 )
 
-def set_servo(connection, enum, pwm_val): ## if you want to use this, remove the manual control command
+def set_servo(connection, enum, ratio): ## if you want to use this, remove the manual control command
+    pwm_val = clamper(1500 + ratio * 500, 1000, 2000)
     message = connection.mav.command_long_send(
             connection.target_system,
             connection.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 
             0,
             enum,
-            1500 + pwm_val * 500,
+            pwm_val,
             0, 0, 0, 0, 
             0
             )
             
 class Servo:
-    def __init__(self, channel_num):
-        self.val = 0
-        self.prev_val = 0
+    def __init__(self, channel_num, start_pos): # start_pos is -1 to 1, to prevent jerk
+        self.val = start_pos
+        self.prev_val = start_pos
         self.channel_num = channel_num
         self.prev_set_time = time.time()
     def set_val(self, val):
+        bootup_timer = flight_elapsed_time.get_time()
         rate_limit = 0.1
-        if (time.time() - self.prev_set_time) > 0:
+        if bootup_timer < SERVO_BOOTUP_TIME_TOTAL:
+            rate_limit = 0.02
+        if (time.time() - self.prev_set_time) > 0 and (bootup_timer > self.channel_num*SERVO_BOOTUP_INTEVRAL):
             self.val = val
             #print((self.val, self.prev_val))
             if (self.val - self.prev_val) > 0:
@@ -209,6 +216,9 @@ pico_loop_timer = Timer()
 mavlink_loop_rate_filter = MovingAverage(20)
 pico_loop_rate_filter = MovingAverage(5)
 
+flight_elapsed_time = Stopwatch()
+flight_elapsed_time.start()
+
 def fetch_messages_and_update():
 
     ################## WARNING ##################
@@ -260,12 +270,12 @@ def fetch_messages_and_update():
     #     sys_status=msg.to_dict()
     #     print(sys_status['drop_rate_comm'])
 
-LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON)
-RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON)
-ELEVATOR = Servo(CHANNEL_ELEVATOR)
-RUDDER = Servo(CHANNEL_RUDDER)
-LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP)
-RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP)
+LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON, start_pos = 0)
+RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON, start_pos = 0)
+ELEVATOR = Servo(CHANNEL_ELEVATOR, start_pos = 0)
+RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
+LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
+RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
 
 pitch_pid = Pid_controller(0.1, 0.000, 0.06, (-1,1), 10)
 flap_damper = SmoothDamp()
@@ -304,6 +314,7 @@ def flight_controller():
         RUDDER.set_val(0)
         LEFT_FLAP.set_val(-flap_angle * 0.4)
         RIGHT_FLAP.set_val(flap_angle)
+
 
 def update_servo_commands():
     control_surfaces['left_aileron']['servo_demand'] = LEFT_AILERON.get_val()

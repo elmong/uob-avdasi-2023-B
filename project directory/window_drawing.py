@@ -336,7 +336,7 @@ def draw_log_sys():
     
     buff = coms_ports['pico'+str(pico_display.page_number-1)]
 
-    draw_text(buff, fonts['helvetica_massive'],  colours['pearl'],800, 900)
+    draw_text(buff, fonts['dbxl'],  colours['pearl'],800, 900)
     # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
@@ -683,7 +683,7 @@ def draw_servo_diagnostic():
             title += "- RUDDER"
     
     servo_angle = servo_demand * 45
-    servo_demand = 1500 + servo_demand * 500
+    servo_demand = clamper(1500 + servo_demand * 500, 1000, 2000)
 
     draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
 
