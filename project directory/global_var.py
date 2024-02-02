@@ -26,29 +26,35 @@ input_commands = {
 }
 
 control_surfaces = {
-    "left_aileron": {
+    "port_aileron": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "servo_pos": 0,
     },
-    "left_flap": {
+    "port_flap": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "servo_pos": 0,
     },
-    "right_aileron": {
+    "starboard_aileron": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "servo_pos": 0,
     },
-    "right_flap": {
+    "starboard_flap": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "servo_pos": 0,
     },
     "elevator": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "servo_pos": 0,
     },
     "rudder": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "servo_pos": 0,
     }
 }
 
@@ -81,22 +87,6 @@ pico_status = {
 
 #GCS Serial Reader Message Size in Bytes
 serial_reader_msg_size = 32
-
-#Sensor Data
-angle_sensor_data_live = {
-    'sensor1' : 0,
-    'sensor2' : 0,
-    'sensor3' : 0,
-    'sensor4' : 0,
-    'sensor5' : 0,
-    'sensor6' : 0,
-    'sensor7' : 0,
-    'sensor8' : 0,
-    'sensor9' : 0,
-    'sensor10' : 0,
-    'sensor11' : 0,
-    'sensor12' : 0
-}
 
 #file path to store data to
 file_path = 'Results.csv'

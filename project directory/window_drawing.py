@@ -403,14 +403,14 @@ def draw_ctrl_diag():
 
     draw_line((center_x, 825), (center_x, 855), 5, colours['green_blue'])
 
-    test_val = 0
-
-    draw_control_bar_vert(1353, 735, 'left', test_val, 'L AIL', test_val)
-    draw_control_bar_vert(2*center_x-1353, 735, 'right', test_val, 'R AIL', test_val)
-    draw_control_bar_vert(1415, 895, 'left', test_val, 'L ELEV', test_val)
-    draw_control_bar_vert(2*center_x-1415, 895, 'right', test_val, 'R ELEV', test_val)
-
-    draw_control_bar_hori(center_x, 900, 'down', test_val, 'RUD', test_val)
+    val = control_surfaces['port_aileron']['angle']
+    draw_control_bar_vert(1353, 735, 'left', val/45, 'L AIL', val)
+    val = control_surfaces['starboard_aileron']['angle']
+    draw_control_bar_vert(2*center_x-1353, 735, 'right', val/45, 'R AIL', val)
+    val = control_surfaces['elevator']['angle']
+    draw_control_bar_vert(1415, 895, 'left', val/45, 'L ELEV', val)
+    val = control_surfaces['rudder']['angle']
+    draw_control_bar_hori(center_x, 900, 'down', val/45, 'RUD', val)
 
 spd_damper = SmoothDamp()
 prev_spd = 0
@@ -652,27 +652,30 @@ def draw_servo_diagnostic():
 
     match servo_display.page_number:
         case 1:
-            surface_angle = control_surfaces['left_aileron']['angle']
-            servo_demand = control_surfaces['left_aileron']['servo_demand']
-            title += "- L AILERON"
+            
+            surface_angle =control_surfaces['port_aileron']['angle']
+            servo_demand = control_surfaces['port_aileron']['servo_demand']
+            title += "- PORT AILERON"
         case 2:
-            surface_angle = control_surfaces['left_flap']['angle']
-            servo_demand = control_surfaces['left_flap']['servo_demand']
-            title += "- L FLAP"
+            
+            surface_angle =control_surfaces['port_flap']['angle']
+            servo_demand = control_surfaces['port_flap']['servo_demand']
+            title += "- PORT FLAP"
         case 3:
-            surface_angle = control_surfaces['right_aileron']['angle']
-            servo_demand = control_surfaces['right_aileron']['servo_demand']
-            title += "- R AILERON"
+           
+            surface_angle =control_surfaces['starboard_aileron']['angle']
+            servo_demand = control_surfaces['starboard_aileron']['servo_demand']
+            title += "- STARBOARD AILERON"
         case 4:
-            surface_angle = control_surfaces['right_flap']['angle']
-            servo_demand = control_surfaces['right_flap']['servo_demand']
-            title += "- R FLAP"
+            surface_angle =control_surfaces['starboard_flap']['angle']
+            servo_demand = control_surfaces['starboard_flap']['servo_demand']
+            title += "- STARBOARD FLAP"
         case 5:
-            surface_angle = control_surfaces['elevator']['angle']
+            surface_angle =control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
             title += "- ELEVATOR"
         case 6:
-            surface_angle = control_surfaces['rudder']['angle']
+            surface_angle =control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
             title += "- RUDDER"
     

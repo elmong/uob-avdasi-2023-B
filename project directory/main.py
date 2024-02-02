@@ -22,8 +22,8 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = False
+TESTING_ON_SIM = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -200,7 +200,7 @@ def connect_picos():
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
         item.read_message()
-        # print(angle_sensor_data_live['sensor2'])
+        print(control_surfaces)
 
 
 ################################ LAND OF PREVIOUS VALUES
@@ -317,10 +317,10 @@ def flight_controller():
 
 
 def update_servo_commands():
-    control_surfaces['left_aileron']['servo_demand'] = LEFT_AILERON.get_val()
-    control_surfaces['left_flap']['servo_demand'] = LEFT_FLAP.get_val()
-    control_surfaces['right_aileron']['servo_demand'] = RIGHT_AILERON.get_val()
-    control_surfaces['right_flap']['servo_demand'] = RIGHT_FLAP.get_val()
+    control_surfaces['port_aileron']['servo_demand'] = LEFT_AILERON.get_val()
+    control_surfaces['port_flap']['servo_demand'] = LEFT_FLAP.get_val()
+    control_surfaces['starboard_aileron']['servo_demand'] = RIGHT_AILERON.get_val()
+    control_surfaces['starboard_flap']['servo_demand'] = RIGHT_FLAP.get_val()
     control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
     control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
 
