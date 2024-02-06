@@ -21,9 +21,9 @@ def Unpacker(msg):
     #_______________________________________________________#
     #data packets are structured, 
     #[0] is the ID of the Sensor, where 
-    #   0 is the sensor connected to --- (ADC1) & --- (ADC2)
-    #   1 is the sensor connected to --- (ADC1) & --- (ADC2)
-    #   2 is the sensor connected to --- (ADC1) & --- (ADC2)
+    #   0 is the sensor connected to Elevator (ADC1) & Rudder (ADC2)
+    #   1 is the sensor connected to PAileron (ADC1) & PFlap (ADC2)
+    #   2 is the sensor connected to SAileron (ADC1) & SFlap (ADC2)
     #   3 is the sensor connected to --- (ADC1) & --- (ADC2)
     #   4 is the sensor connected to --- (ADC1) & --- (ADC2)
     #   5 is the sensor connected to --- (ADC1) & --- (ADC2)
