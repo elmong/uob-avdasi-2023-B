@@ -3,7 +3,7 @@
 
 #---Import Libraries---#
 from asyncio.windows_events import NULL
-from global_var import angle_sensor_data_live , serial_reader_msg_size , file_path
+from global_var import control_surfaces , serial_reader_msg_size , file_path
 import serial
 
 #---Functions---#
@@ -50,23 +50,23 @@ def Unpacker(msg):
     #update values in global variables
     match msgArray[0]: 
         case '0':
-            angle_sensor_data_live['elevator'] = msgArray[2]
-            angle_sensor_data_live['rudder'] = msgArray[3]
+            control_surfaces['elevator']['angle'] = float(msgArray[2])
+            control_surfaces['rudder']['angle'] = float(msgArray[3])
         case '1':
-            angle_sensor_data_live['paileron'] = msgArray[2]
-            angle_sensor_data_live['pflap'] = msgArray[3]
+            control_surfaces['port_aileron']['angle'] = float(msgArray[2])
+            control_surfaces['port_flap']['angle'] = float(msgArray[3])
         case '2':
-            angle_sensor_data_live['saileron'] = msgArray[2]
-            angle_sensor_data_live['sflap'] = msgArray[3]
+            control_surfaces['starboard_aileron']['angle'] = float(msgArray[2])
+            control_surfaces['starboard_flap']['angle'] = float(msgArray[3])
         case '3':
-            angle_sensor_data_live['sensor7'] = msgArray[2]
-            angle_sensor_data_live['sensor8'] = msgArray[3]
+            control_surfaces['elevator']['servo_pos'] = float(msgArray[2])
+            control_surfaces['rudder']['servo_pos'] = float(msgArray[3])
         case '4':
-            angle_sensor_data_live['sensor9'] = msgArray[2]
-            angle_sensor_data_live['sensor10'] = msgArray[3]
+            control_surfaces['port_aileron']['servo_pos'] = float(msgArray[2])
+            control_surfaces['port_flap']['servo_pos'] = float(msgArray[3])
         case '5':
-            angle_sensor_data_live['sensor11'] = msgArray[2]
-            angle_sensor_data_live['sensor12'] = msgArray[3]   
+            control_surfaces['starboard_aileron']['servo_pos'] = float(msgArray[2])
+            control_surfaces['starboard_flap']['servo_pos'] = float(msgArray[3])
 
     return msgArray
     
