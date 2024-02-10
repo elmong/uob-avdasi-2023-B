@@ -400,15 +400,12 @@ live_data_plot_ini()
 t = threading.Thread(target=worker)
 t.start()
 
-def main_worker():
-    if TESTING_GRAPHICS_ONLY:
-        ml = asyncio.run(graphics_only_async_loop())  
-    else:
-        ml = asyncio.run(async_loop())
-    execute_polling_coroutines_forever(ml)
-    return
 
-t2 = threading.Thread(target=main_worker)
-t2.start()
+if TESTING_GRAPHICS_ONLY:
+    ml = asyncio.run(graphics_only_async_loop())  
+else:
+    ml = asyncio.run(async_loop())
+    
+
 
 
