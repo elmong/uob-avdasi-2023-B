@@ -9,6 +9,7 @@ import math
 import csv
 import os
 import serial
+import threading
 
 from math_helpers import *
 from global_var import *
@@ -17,6 +18,7 @@ import pico_class
 from PID import *
 
 import window_drawing
+import live_plotter_class
 
 root_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -180,7 +182,7 @@ if not TESTING_GRAPHICS_ONLY:
 
 
 #declare pico objects
-pico0 = pico_class.Pico(0, None , False, coms_ports['pico0'], -1)
+pico0 = pico_class.Pico(0, None , False, coms_ports['pico0'], None)
 pico1 = pico_class.Pico(1, None , False, coms_ports['pico1'], None)
 pico2 = pico_class.Pico(2, None , False, coms_ports['pico2'], None)
 pico3 = pico_class.Pico(3, None , False, coms_ports['pico3'], None)
@@ -202,6 +204,10 @@ def collect_pico_msgs(): #collects all of the picos' messages
         item.read_message()
         print(angle_sensor_data_live)
 
+#declare live data visualisation servers
+control_surface_plot = live_plotter_class.Live_plotter(400)
+control_surface_plot.create_datasets("elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap")
+control_surface_plot.declare_figures()
 
 ################################ LAND OF PREVIOUS VALUES
 
@@ -324,10 +330,11 @@ def update_servo_commands():
     control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
     control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
 
-def not_async_pygame_loop(): ## For the sake of debugging with graphics only.
+async def graphics_only_pygame_loop(): ## For the sake of debugging with graphics only.
     while True:
         window_drawing.pygame_draw_loop()
         window_drawing.pygame_update_loop()
+        await asyncio.sleep(0)
 
 async def pygame_loop():
     while True:
@@ -362,17 +369,46 @@ async def pico_loop(): #where all of the pico's events are handled
         airplane_data['pico_refresh_rate'] = pico_loop_rate_filter.get_value()
         await asyncio.sleep(0)
 
+def live_data_plot_ini():
+    control_surface_plot.ini()
+    
+async def live_data_plot_loop():
+    while True:
+        control_surface_plot.update_data_dictionaries_control_surfaces()
+        await asyncio.sleep(0)
+
 async def async_loop():
     task1 = asyncio.create_task(mavlink_loop())
     task2 = asyncio.create_task(pygame_loop())
     task3 = asyncio.create_task(pico_loop())
     await asyncio.gather(task1, task2, task3)
 
-if TESTING_GRAPHICS_ONLY:
-    while True:
-        not_async_pygame_loop()
-else:
-    asyncio.run(async_loop())
+#tasks set to run only when graphics only is true
+async def graphics_only_async_loop():
+    task3 = asyncio.create_task(graphics_only_pygame_loop())
+    task4 = asyncio.create_task(live_data_plot_loop())
+    
+    await asyncio.gather(task3,task4)
 
+def worker():
+    #creating a thread for live data plotter server (because it's a blocking function that is already running an asyncio loop)
+    sl = control_surface_plot.server.io_loop.start()
+    execute_polling_coroutines_forever(sl)
+    return
+
+live_data_plot_ini()
+t = threading.Thread(target=worker)
+t.start()
+
+def main_worker():
+    if TESTING_GRAPHICS_ONLY:
+        ml = asyncio.run(graphics_only_async_loop())  
+    else:
+        ml = asyncio.run(async_loop())
+    execute_polling_coroutines_forever(ml)
+    return
+
+t2 = threading.Thread(target=main_worker)
+t2.start()
 
 

@@ -653,23 +653,23 @@ def draw_servo_diagnostic():
     match servo_display.page_number:
         case 1:
             #surface_angle = angle_sensor_data_live['paileron']#control_surfaces['left_aileron']['angle']
-            surface_angle =control_surfaces['left_aileron']['angle']
-            servo_demand = control_surfaces['left_aileron']['servo_demand']
+            surface_angle =control_surfaces['port_aileron']['angle']
+            servo_demand = control_surfaces['port_aileron']['servo_demand']
             title += "- L AILERON"
         case 2:
             #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['left_flap']['angle']
-            surface_angle =control_surfaces['left_flap']['angle']
-            servo_demand = control_surfaces['left_flap']['servo_demand']
+            surface_angle =control_surfaces['port_flap']['angle']
+            servo_demand = control_surfaces['port_flap']['servo_demand']
             title += "- L FLAP"
         case 3:
             #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['right_aileron']['angle']
-            surface_angle =control_surfaces['right_aileron']['angle']
-            servo_demand = control_surfaces['right_aileron']['servo_demand']
+            surface_angle =control_surfaces['starboard_aileron']['angle']
+            servo_demand = control_surfaces['starboard_aileron']['servo_demand']
             title += "- R AILERON"
         case 4:
             #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['right_flap']['angle']
-            surface_angle =control_surfaces['right_flap']['angle']
-            servo_demand = control_surfaces['right_flap']['servo_demand']
+            surface_angle =control_surfaces['starboard_flap']['angle']
+            servo_demand = control_surfaces['starboard_flap']['servo_demand']
             title += "- R FLAP"
         case 5:
             #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']

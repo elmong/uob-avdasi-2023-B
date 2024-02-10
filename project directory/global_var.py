@@ -26,19 +26,19 @@ input_commands = {
 }
 
 control_surfaces = {
-    "left_aileron": {
+    "port_aileron": {
         "servo_demand": 0,
         "angle": 0
     },
-    "left_flap": {
+    "port_flap": {
         "servo_demand": 0,
         "angle": 0
     },
-    "right_aileron": {
+    "starboard_aileron": {
         "servo_demand": 0,
         "angle": 0
     },
-    "right_flap": {
+    "starboard_flap": {
         "servo_demand": 0,
         "angle": 0
     },
@@ -103,8 +103,8 @@ file_path = 'Results.csv'
 
 PID_values = {
     'Kp' : 1.0,
-    'Ki' : 0.1,
-    'Kd' : 0.01,
+    'Ki' : 0, #0.1,
+    'Kd' : 0, #0.01,
     'setpoint' : 0,
     'output_limits' : (-45,45)
 }
