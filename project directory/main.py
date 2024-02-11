@@ -157,7 +157,21 @@ def mavlink_logging():
                         logging_elapsed_time,
                         airplane_data['pitch'],
                         airplane_data['roll'],
-                        airplane_data['yaw']
+                        airplane_data['yaw'],
+                        airplane_data["airspeed"],
+                        airplane_data["aoa"],
+                        control_surfaces["port_aileron"]["servo_demand"],
+                        control_surfaces["port_aileron"]["angle"],
+                        control_surfaces["port_flap"]["servo_demand"],
+                        control_surfaces["port_flap"]["angle"],
+                        control_surfaces["starboard_aileron"]["servo_demand"],
+                        control_surfaces["starboard_aileron"]["angle"],
+                        control_surfaces["starboard_flap"]["servo_demand"],
+                        control_surfaces["starboard_flap"]["angle"],
+                        control_surfaces["elevator"]["servo_demand"],
+                        control_surfaces["elevator"]["angle"],
+                        control_surfaces["rudder"]["servo_demand"],
+                        control_surfaces["rudder"]["angle"]
                         )
     else:
         logging_start_time = 0
@@ -190,7 +204,6 @@ pico4 = pico_class.Pico(4, None , False, coms_ports['pico4'], None)
 pico5 = pico_class.Pico(5, None , False, coms_ports['pico5'], None)
 
 pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
-#pico_array = [pico0]
 
 def connect_picos():
     #if pico connections are closed, attempt connection
@@ -202,12 +215,10 @@ def connect_picos():
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
         item.read_message()
-        print(angle_sensor_data_live)
 
 #declare live data visualisation servers
-control_surface_plot = live_plotter_class.Live_plotter(400)
-control_surface_plot.create_datasets("elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap")
-control_surface_plot.declare_figures()
+control_surface_plot = live_plotter_class.Live_plotter(80)
+control_surface_plot.create_datasets("elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap","elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap","actual_pitch","demanded_pitch")
 
 ################################ LAND OF PREVIOUS VALUES
 
@@ -372,10 +383,6 @@ async def pico_loop(): #where all of the pico's events are handled
 def live_data_plot_ini():
     control_surface_plot.ini()
     
-async def live_data_plot_loop():
-    while True:
-        control_surface_plot.update_data_dictionaries_control_surfaces()
-        await asyncio.sleep(0)
 
 async def async_loop():
     task1 = asyncio.create_task(mavlink_loop())
@@ -386,15 +393,21 @@ async def async_loop():
 #tasks set to run only when graphics only is true
 async def graphics_only_async_loop():
     task3 = asyncio.create_task(graphics_only_pygame_loop())
-    task4 = asyncio.create_task(live_data_plot_loop())
-    
-    await asyncio.gather(task3,task4)
+    await asyncio.gather(task3)
 
 def worker():
     #creating a thread for live data plotter server (because it's a blocking function that is already running an asyncio loop)
+    #control_surface_plot.server.io_loop.add_callback(control_surface_plot.server.show, "/")
+    #control_surface_plot.server.io_loop.add_callback(control_surface_plot.update_data_dictionaries_control_surfaces)
     sl = control_surface_plot.server.io_loop.start()
     execute_polling_coroutines_forever(sl)
     return
+
+def quit_func():
+    #needed to stop live data plotting server
+    #doesnt do anything as it is never called
+    control_surface_plot.shutdown()
+    quit()
 
 live_data_plot_ini()
 t = threading.Thread(target=worker)

@@ -82,22 +82,6 @@ pico_status = {
 #GCS Serial Reader Message Size in Bytes
 serial_reader_msg_size = 32
 
-#Sensor Data
-angle_sensor_data_live = {
-    'elevator' : 0,
-    'rudder' : 0,
-    'paileron' : 0,
-    'pflap' : 0,
-    'saileron' : 0,
-    'sflap' : 0,
-    'sensor7' : 0,
-    'sensor8' : 0,
-    'sensor9' : 0,
-    'sensor10' : 0,
-    'sensor11' : 0,
-    'sensor12' : 0
-}
-
 #file path to store data to
 file_path = 'Results.csv'
 
