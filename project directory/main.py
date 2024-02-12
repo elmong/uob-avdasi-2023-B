@@ -24,6 +24,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = True
+TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
