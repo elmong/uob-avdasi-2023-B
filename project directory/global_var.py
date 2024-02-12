@@ -59,6 +59,12 @@ ui_commands = {
     'logging' : False,
 }
 
+
+manual_servo_colour = 'pearl_grey'
+manual_servo_text = '000'
+servo_manual = 0
+servo_text_is_manual = False
+
 #Ports/connection addresses used
 coms_ports = {
     #pico# does not have to match pico ID, just generic assignment of ports to picos
