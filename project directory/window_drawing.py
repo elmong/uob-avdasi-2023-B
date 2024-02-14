@@ -11,7 +11,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 pygame.init()
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
-MONITOR_SIZE = (pygame.display.Info().current_w*0.6, pygame.display.Info().current_h*0.6)
+MONITOR_SIZE = (pygame.display.Info().current_w*0.8, pygame.display.Info().current_h*0.8)
 display = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
 screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
