@@ -25,8 +25,8 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = True
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_GRAPHICS_ONLY = False
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
@@ -357,6 +357,11 @@ async def pico_loop(): #where all of the pico's events are handled
 def live_data_plot_ini():
     control_surface_plot.ini()
     
+async def pygame_loop():
+    while True:
+        window_drawing.pygame_draw_loop()
+        window_drawing.pygame_update_loop()
+        await asyncio.sleep(0)
 
 async def async_loop():
     task1 = asyncio.create_task(mavlink_loop())
@@ -366,7 +371,7 @@ async def async_loop():
 
 #tasks set to run only when graphics only is true
 async def graphics_only_async_loop():
-    task3 = asyncio.create_task(graphics_only_pygame_loop())
+    task3 = asyncio.create_task(pygame_loop())
     await asyncio.gather(task3)
 
 def worker():
