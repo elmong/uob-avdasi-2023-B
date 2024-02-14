@@ -3,6 +3,9 @@ def lerp(point1, point2, x): # a helper
     y1, y2 = point2
     return ((y2 - y1) / (x2 - x1)) * (x - x1) + y1
 
+def remap(old_min, old_max, new_min, new_max, old_val):
+    return (new_max - new_min)*(old_val - old_min) / (old_max - old_min) + new_min
+
 def clamper(value, minimum, maximum):
     if value < minimum:
         return minimum

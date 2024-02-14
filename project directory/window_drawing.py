@@ -10,12 +10,13 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 pygame.init()
 SCREEN_WIDTH = 1920
-SREEN_HEIGHT = 1080
+SCREEN_HEIGHT = 1080
 MONITOR_SIZE = (pygame.display.Info().current_w*0.6, pygame.display.Info().current_h*0.6)
 display = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
-screen = pygame.Surface((SCREEN_WIDTH, SREEN_HEIGHT))
+screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
+CONTROL_CURSOR_SPRING_BACK = True
 
 MOUSE_X = 0
 MOUSE_Y = 0
@@ -70,7 +71,7 @@ colours = {
 
 class Button:
     instances = []
-    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None):
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False):
         Button.instances.append(self)
         self.x = x
         self.y = y
@@ -82,14 +83,16 @@ class Button:
         self.is_hovered = False
         self.callback = callback
         self.font = font
-    
+        self.suppress_drawing = suppress_drawing
+
     def draw(self):
-        draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
-        if self.text_row2:
-            draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
-            draw_text_centered(self.text_row2, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 + 10)
-        else:
-            draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2)
+        if not self.suppress_drawing:
+            draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
+            if self.text_row2:
+                draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 - 10)
+                draw_text_centered(self.text_row2, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 + 10)
+            else:
+                draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2)
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
     
@@ -107,22 +110,23 @@ class Button:
             self.callback()
 
 class ToggleButton(Button):
-    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None):
-        super().__init__( x, y, width, height, colour, font, text_row1, text_row2, callback)
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False): # suppress_drawing makes it draw nothing
+        super().__init__( x, y, width, height, colour, font, text_row1, text_row2, callback, suppress_drawing)
         self.state = False
     def draw(self):
-        draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
-        text_colour = colours['pearl'] # essentially overriding whatever colour argument. All toggle buttons should be of same colour
-        if self.state:
-            text_colour = colours['dark_blue']
-            pygame.draw.rect(screen, colours['green_blue'], (self.x + 3 ,self.y + 3, self.width - 5, self.height - 5))
-    
-        if self.text_row2:
-            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 - 10+3)
-            draw_text_centered(self.text_row2, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 + 10+3)
-        else:
-            draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2+3)
-            
+        if not self.suppress_drawing:
+            draw_rectangle(self.x, self.y, self.width, self.height, self.colour, 3)
+            text_colour = colours['pearl'] # essentially overriding whatever colour argument. All toggle buttons should be of same colour
+            if self.state:
+                text_colour = colours['dark_blue']
+                pygame.draw.rect(screen, colours['green_blue'], (self.x + 3 ,self.y + 3, self.width - 5, self.height - 5))
+
+            if self.text_row2:
+                draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 - 10+3)
+                draw_text_centered(self.text_row2, self.font, text_colour, self.x + self.width/2, self.y + self.height/2 + 10+3)
+            else:
+                draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2+3)
+
         if self.is_hovered:
             draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
 
@@ -170,6 +174,21 @@ class ServoDisplay:
         self.page_number = max(self.page_number, 1)
 servo_display = ServoDisplay()
 
+def toggle_servo_manual_control():
+    match servo_display.page_number:
+        case 1:
+            control_surfaces['left_aileron']['manual_control'] = not control_surfaces['left_aileron']['manual_control']
+        case 2:
+            control_surfaces['left_flap']['manual_control'] = not control_surfaces['left_flap']['manual_control']
+        case 3:
+            control_surfaces['right_aileron']['manual_control'] = not control_surfaces['right_aileron']['manual_control']
+        case 4:
+            control_surfaces['right_flap']['manual_control'] = not control_surfaces['right_flap']['manual_control']
+        case 5:
+            control_surfaces['elevator']['manual_control'] = not control_surfaces['elevator']['manual_control']
+        case 6:
+            control_surfaces['rudder']['manual_control'] = not control_surfaces['rudder']['manual_control']
+
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
@@ -194,6 +213,8 @@ page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['he
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
+
+servo_manual_conntrol_button = ToggleButton(1514, 288, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_manual_control, suppress_drawing = True) 
 
 ############  I love OOP
 
@@ -266,6 +287,7 @@ def draw_background_colour():
     # w, h = pygame.display.get_surface().get_size()
     # pygame.draw.rect(screen, colours['bgd'], (0,0,w,h))
     screen.fill(colours['bgd'])
+    
 
 def draw_bad_screen():
     draw_background_colour()
@@ -341,18 +363,19 @@ def draw_control_bar_hori(x, y, arrow_side, arrow_ratio, text, value):
     draw_line((x-60, y), (x+60, y), 2, colours['pearl'])
     draw_line((x-60, y-10), (x-60, y+10), 2, colours['pearl'])
     draw_line((x+60, y-10), (x+60, y+10), 2, colours['pearl'])
-    draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+55)
 
     number = '{:.2f}'.format(value)
     x = x + arrow_ratio * 60
     if arrow_side == 'up':
         y = y - 4
+        draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+15)
         draw_line((x, y), (x-11, y-20), 3, colours['green'])
         draw_line((x, y), (x+11, y-20), 3, colours['green'])
         draw_line((x-11, y-20), (x+11, y-20), 3, colours['green'])
-        draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y-25)
+        draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y-40)
     elif arrow_side == 'down':
         y = y + 4
+        draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+55)
         draw_line((x, y), (x-11, y+20), 3, colours['green'])
         draw_line((x, y), (x+11, y+20), 3, colours['green'])
         draw_line((x-11, y+20), (x+11, y+20), 3, colours['green'])
@@ -384,10 +407,14 @@ def draw_ctrl_diag():
 
     draw_control_bar_vert(1353, 735, 'left', test_val, 'L AIL', test_val)
     draw_control_bar_vert(2*center_x-1353, 735, 'right', test_val, 'R AIL', test_val)
-    draw_control_bar_vert(1415, 895, 'left', test_val, 'L ELEV', test_val)
-    draw_control_bar_vert(2*center_x-1415, 895, 'right', test_val, 'R ELEV', test_val)
+    draw_control_bar_vert(1415, 895, 'left', test_val, 'ELEV', test_val)
 
     draw_control_bar_hori(center_x, 900, 'down', test_val, 'RUD', test_val)
+
+    draw_control_bar_hori(center_x - 70, 700, 'up', test_val, 'L FLAP', test_val)
+    draw_control_bar_hori(center_x + 70, 700, 'up', test_val, 'R FLAP', test_val)
+
+
 
 spd_damper = SmoothDamp()
 prev_spd = 0
@@ -536,6 +563,8 @@ stepper = Stepper()
 def draw_menu():
     w, h = screen.get_size()
     draw_line((0, 112), (w, 112), 3, colours['pearl'])
+    draw_line((1, 0), (1, h), 3, colours['grey'])
+    draw_line((w-2, 0), (w-2, h), 3, colours['grey'])
     draw_text_xcentered('SYSTEM MENU ACCESS', fonts['dbxl_small'], colours['pearl'], 1920/2, 92)
 
 def draw_refresh_rate():
@@ -556,6 +585,8 @@ class MouseControl():
         self.cursor_ctrl_box_y = 540
         self.cursor_ctrl_side_length = 244
         self.cursor_ctrl_boost_factor = 1.05 # self.cursor_ctrl_boost_factor for aesthetics, so that the cross don't stick to the edge
+        self.prev_roll_command = 0
+        self.prev_pitch_command = 0
 
     def attach(self): # if x and y is in range, attach the mouse control
         self.mouse_attached_to_ctrl = True
@@ -566,14 +597,18 @@ class MouseControl():
     def update(self):
         pitch_command = 0
         roll_command = 0
+        if not CONTROL_CURSOR_SPRING_BACK:
+            pitch_command = self.prev_pitch_command
+            roll_command = self.prev_roll_command
     
         if self.mouse_attached_to_ctrl:
-            global MOUSE_X
-            global MOUSE_Y
+            global MOUSE_X, MOUSE_Y
             roll_command = lerp((self.cursor_ctrl_box_x, self.cursor_ctrl_box_x+self.cursor_ctrl_side_length), (-1 * self.cursor_ctrl_boost_factor, 1 * self.cursor_ctrl_boost_factor), MOUSE_X)
             roll_command = clamper(roll_command, -1, 1)
             pitch_command = lerp((self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), (-1 * self.cursor_ctrl_boost_factor , 1 * self.cursor_ctrl_boost_factor), MOUSE_Y)
             pitch_command = clamper(pitch_command, -1, 1)
+            self.prev_roll_command = roll_command
+            self.prev_pitch_command = pitch_command
     
         input_commands['elevator'] = self.elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
         input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
@@ -617,38 +652,47 @@ def draw_servo_diagnostic():
     servo_angle = 0
     surface_angle = 0
     servo_demand = 0
+    servo_in_manual = False
     title = "CTRL "
 
     match servo_display.page_number:
         case 1:
             surface_angle = control_surfaces['left_aileron']['angle']
             servo_demand = control_surfaces['left_aileron']['servo_demand']
+            servo_in_manual = control_surfaces['left_aileron']['manual_control']
             title += "- L AILERON"
         case 2:
             surface_angle = control_surfaces['left_flap']['angle']
             servo_demand = control_surfaces['left_flap']['servo_demand']
+            servo_in_manual = control_surfaces['left_flap']['manual_control']
             title += "- L FLAP"
         case 3:
             surface_angle = control_surfaces['right_aileron']['angle']
             servo_demand = control_surfaces['right_aileron']['servo_demand']
+            servo_in_manual = control_surfaces['right_aileron']['manual_control']
             title += "- R AILERON"
         case 4:
             surface_angle = control_surfaces['right_flap']['angle']
             servo_demand = control_surfaces['right_flap']['servo_demand']
+            servo_in_manual = control_surfaces['right_flap']['manual_control']
             title += "- R FLAP"
         case 5:
             surface_angle = control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
+            servo_in_manual = control_surfaces['elevator']['manual_control']
             title += "- ELEVATOR"
         case 6:
             surface_angle = control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
+            servo_in_manual = control_surfaces['rudder']['manual_control']
             title += "- RUDDER"
     
     servo_angle = servo_demand * 45
     servo_demand = 1500 + servo_demand * 500
 
     draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
+
+    draw_text(servo_display.page_number, fonts['helvetica'], colours['dark_blue'], 948, 215)
 
     draw_image_centered_rotated(textures['servo_arm'], 1099, 370, servo_angle)
 
@@ -658,13 +702,21 @@ def draw_servo_diagnostic():
 
     draw_text("// TMS CMD POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218)
     draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(servo_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237)
-    draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302)
+    if not servo_in_manual:
+        draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302)
+    else:
+        pygame.draw.rect(screen, colours['red'], (1513 + 3,215+73+3,384-4,105-73-4))
+        draw_rectangle(1513, 215+73, 384, 105-73, colours['red'], 2)
+        draw_text_centered("MANUAL OVRD", fonts['dbxl_title'], colours['pearl'], 1702, 306)
 
     draw_text("// HALL SENSOR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
     draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
     draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
 
-    draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['green_blue'], 1070, 420)
+    if not servo_in_manual:
+        draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['green_blue'], 1070, 420)
+    else:
+        draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['red'], 1070, 420)
 
 def draw_aoa_bar(aoa):
     draw_rectangle(614, 215, 280, 70, colours['light_blue'], 2)
@@ -765,15 +817,17 @@ def draw_buttons():
     for button in Button.instances:
         button.draw()
 
+scaled_drawing_surface_size = [0,0]
+
 def pygame_update_loop():
     mouse_beforetransform_x, mouse_beforetransform_y = pygame.mouse.get_pos()
     screen_w, screen_h = screen.get_size()
     display_w, display_h = display.get_size()
 
-    global MOUSE_X
-    global MOUSE_Y
-    MOUSE_X = mouse_beforetransform_x * (screen_w/display_w)
-    MOUSE_Y = mouse_beforetransform_y * (screen_h/display_h)
+    global MOUSE_X, MOUSE_Y
+
+    MOUSE_X = remap((display_w-scaled_drawing_surface_size[0])/2, (display_w-scaled_drawing_surface_size[0])/2+scaled_drawing_surface_size[0], 0, SCREEN_WIDTH, mouse_beforetransform_x)
+    MOUSE_Y = remap((display_h-scaled_drawing_surface_size[1])/2, (display_h-scaled_drawing_surface_size[1])/2+scaled_drawing_surface_size[1], 0, SCREEN_HEIGHT, mouse_beforetransform_y)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -833,7 +887,18 @@ def pygame_draw_loop(): #loop
     draw_buttons()
 
     drawing_surface_center = screen.get_rect().center
-    scaled_drawing_surface = pygame.transform.smoothscale(screen, display.get_size())
-    display.blit(scaled_drawing_surface, (0, 0))
-  
+
+    default_aspect_ratio = 1920/1080
+    window_size = display.get_size()
+    scaled_drawing_surface = None
+    if window_size[0]/window_size[1] > default_aspect_ratio:
+        scaled_drawing_surface = pygame.transform.smoothscale(screen, (window_size[1]*default_aspect_ratio, window_size[1]))
+    elif window_size[0]/window_size[1] < default_aspect_ratio:
+        scaled_drawing_surface = pygame.transform.smoothscale(screen, (window_size[0], window_size[0]/default_aspect_ratio))
+
+    global scaled_drawing_surface_size
+    scaled_drawing_surface_size = scaled_drawing_surface.get_size()
+    display.blit(scaled_drawing_surface, ((window_size[0]-scaled_drawing_surface_size[0])/2,(window_size[1]-scaled_drawing_surface_size[1])/2))
+
+
     pygame.display.update()

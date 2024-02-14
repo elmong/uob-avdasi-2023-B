@@ -22,12 +22,13 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = False
+TESTING_ON_SIM = True
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
+SERVO_RATE_LIMIT = 3
 SUICIDE = False
 
 ################################
@@ -74,7 +75,8 @@ class Servo:
         self.channel_num = channel_num
         self.prev_set_time = time.time()
     def set_val(self, val):
-        rate_limit = 0.1
+        global DELTA_TIME
+        rate_limit = SERVO_RATE_LIMIT * DELTA_TIME
         if (time.time() - self.prev_set_time) > 0:
             self.val = val
             #print((self.val, self.prev_val))
@@ -279,34 +281,30 @@ def flight_controller():
         flap_angle = flap_damper.smooth_damp(prev_flap_angle, (input_commands['flap_setting']-1), 1.2, 1.5, DELTA_TIME)
         prev_flap_angle = flap_angle
 
-        LEFT_AILERON.set_val(input_commands['aileron'])
-        RIGHT_AILERON.set_val(-input_commands['aileron'])
-
+        control_surfaces['left_aileron']['servo_demand'] = input_commands['aileron']
+        control_surfaces['right_aileron']['servo_demand'] = -input_commands['aileron']
+        control_surfaces['left_flap']['servo_demand'] = -flap_angle * 0.4
+        control_surfaces['right_flap']['servo_demand'] = flap_angle
         if not input_commands['ap_on']:
-            ELEVATOR.set_val(-input_commands['elevator'])
+            control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
             input_commands['pitch_pid'] = 0
-            pitch_pid.integrator = 0
+            pitch_pid.integrator = 0 # TODO encapsulate this
         else:
             cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME)
             input_commands['pitch_pid'] = cmd
-            ELEVATOR.set_val(-cmd)
-        RUDDER.set_val(0)
-        LEFT_FLAP.set_val(-flap_angle * 0.4)
-        RIGHT_FLAP.set_val(flap_angle)
-
-def update_servo_commands():
-    control_surfaces['left_aileron']['servo_demand'] = LEFT_AILERON.get_val()
-    control_surfaces['left_flap']['servo_demand'] = LEFT_FLAP.get_val()
-    control_surfaces['right_aileron']['servo_demand'] = RIGHT_AILERON.get_val()
-    control_surfaces['right_flap']['servo_demand'] = RIGHT_FLAP.get_val()
-    control_surfaces['elevator']['servo_demand'] = ELEVATOR.get_val()
-    control_surfaces['rudder']['servo_demand'] = RUDDER.get_val()
-
+            control_surfaces['elevator']['servo_demand'] = -cmd
+        control_surfaces['rudder']['servo_demand'] = 0
+        
+        LEFT_AILERON.set_val(control_surfaces['left_aileron']['servo_demand'])
+        RIGHT_AILERON.set_val(control_surfaces['right_aileron']['servo_demand'])
+        ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
+        RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
+        LEFT_FLAP.set_val(control_surfaces['left_flap']['servo_demand'])
+        RIGHT_FLAP.set_val(control_surfaces['right_flap']['servo_demand'])
 
 def mavlink_loop():
     fetch_messages_and_update()
     flight_controller()
-    update_servo_commands()
     update_refresh_rate()
 
 def pygame_loop():

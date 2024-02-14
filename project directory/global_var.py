@@ -31,27 +31,33 @@ servo_input_pwm = {
 control_surfaces = {
     "left_aileron": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "manual_control": False,
     },
     "left_flap": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "manual_control": False,
     },
     "right_aileron": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "manual_control": False,
     },
     "right_flap": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "manual_control": False,
     },
     "elevator": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "manual_control": False,
     },
     "rudder": {
         "servo_demand": 0,
-        "angle": 0
+        "angle": 0,
+        "manual_control": False,
     }
 }
 
