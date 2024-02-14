@@ -172,14 +172,12 @@ servo_display = ServoDisplay()
 
 class ServoMech:
     def __init__(self):
-        global servo_is_manual
-        servo_is_manual = False
+        self.servo_is_manual = False
     def MechServoToggle(self):
-        global servo_is_manual
-        if servo_is_manual:
-            servo_is_manual = False
+        if self.servo_is_manual:
+            self.servo_is_manual = False
         else:
-            servo_is_manual = True
+            self.servo_is_manual = True
 servo_mech = ServoMech()
 
 class ServoMechText:
@@ -189,17 +187,12 @@ class ServoMechText:
     def servo_manual_text_toggle(self):
         global servo_text_is_manual
         global manual_servo_colour
-        global servo_is_manual
         if servo_text_is_manual:
             servo_text_is_manual = False
             manual_servo_colour = 'pearl_grey'
         else:
             servo_text_is_manual = True
             manual_servo_colour = 'pearl'
-        if servo_is_manual:
-            manual_servo_colour = 'pearl'
-        else:
-            manual_servo_colour = 'pearl_grey'
 servo_mech_text = ServoMechText()
 
 ############ The land of button creation
@@ -227,7 +220,7 @@ page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['he
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
 
-manual_servo = ToggleButton(1089, 440, 80, 45, colours['pearl'], fonts['dbxl_title'], "MAN", callback = servo_mech.MechServoToggle)
+manual_servo = ToggleButton(1089, 440, 80, 45, colours['pearl'], fonts['dbxl_title'], "PID", callback = servo_mech.MechServoToggle)
 manual_servo_text_button = ToggleButton(939,440,150,45, colours[manual_servo_colour], fonts['helvetica_big'], "", callback = servo_mech_text.servo_manual_text_toggle)
 
 ############  I love OOP
@@ -637,8 +630,6 @@ class MouseControl():
 mouse_control = MouseControl()
 
 def draw_servo_diagnostic():
-    global servo_is_manual
-
     draw_rectangle(939, 215, 545, 270, colours['light_blue'], 2)
     pygame.draw.line(screen, colours['light_blue'], (939, 215+30) , (939+545, 215+30), 2)
     pygame.draw.rect(screen, colours['light_blue'], (939,215,30,30))
@@ -660,37 +651,37 @@ def draw_servo_diagnostic():
 
     match servo_display.page_number:
         case 1:
-            if servo_is_manual:
+            if servo_text_is_manual:
                 control_surfaces['left_aileron']['servo_demand'] = servo_manual
             surface_angle = control_surfaces['left_aileron']['angle']
             servo_demand = control_surfaces['left_aileron']['servo_demand']
             title += "- L AILERON"
         case 2:
-            if servo_is_manual:
+            if servo_text_is_manual:
                 control_surfaces['left_flap']['servo_demand'] = servo_manual
             surface_angle = control_surfaces['left_flap']['angle']
             servo_demand = control_surfaces['left_flap']['servo_demand']
             title += "- L FLAP"
         case 3:
-            if servo_is_manual:
+            if servo_text_is_manual:
                 control_surfaces['right_aileron']['servo_demand'] = servo_manual
             surface_angle = control_surfaces['right_aileron']['angle']
             servo_demand = control_surfaces['right_aileron']['servo_demand']
             title += "- R AILERON"
         case 4:
-            if servo_is_manual:
+            if servo_text_is_manual:
                 control_surfaces['right_flap']['servo_demand'] = servo_manual
             surface_angle = control_surfaces['right_flap']['angle']
             servo_demand = control_surfaces['right_flap']['servo_demand']
             title += "- R FLAP"
         case 5:
-            if servo_is_manual:
+            if servo_text_is_manual:
                 control_surfaces['elevator']['servo_demand'] = servo_manual
             surface_angle = control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
             title += "- ELEVATOR"
         case 6:
-            if servo_is_manual:
+            if servo_text_is_manual:
                 control_surfaces['rudder']['servo_demand'] = servo_manual
             surface_angle = control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
@@ -828,12 +819,9 @@ def pygame_update_loop():
     global MOUSE_Y
     MOUSE_X = mouse_beforetransform_x * (screen_w/display_w)
     MOUSE_Y = mouse_beforetransform_y * (screen_h/display_h)
-
     global servo_manual
     global manual_servo_colour
     global manual_servo_text
-    global servo_is_manual
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
@@ -858,7 +846,6 @@ def pygame_update_loop():
         elif event.type == pygame.MOUSEBUTTONUP:
             mouse_control.detach()
             stepper.detach()
-            
         elif event.type == pygame.KEYDOWN and servo_text_is_manual:
                 if event.key == pygame.K_BACKSPACE:
                     manual_servo_text = manual_servo_text[:-1]
@@ -868,8 +855,7 @@ def pygame_update_loop():
                         manual_servo_text += event.unicode
                         if len(manual_servo_text) > 3:
                             manual_servo_text = manual_servo_text[-3:]
-    if servo_is_manual:
-        servo_manual = int(manual_servo_text)
+                servo_manual = int(manual_servo_text)
 
     for button in Button.instances:
         button.check_hot(MOUSE_X, MOUSE_Y)
