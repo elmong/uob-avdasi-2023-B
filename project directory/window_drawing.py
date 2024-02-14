@@ -196,7 +196,7 @@ class PicoDisplay:
 pico_display = PicoDisplay()
 
 ############ The land of button creation
-quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
+quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: os._exit(os.EX_OK))
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
 arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
 button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))

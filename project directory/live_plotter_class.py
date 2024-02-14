@@ -5,7 +5,7 @@ from datetime import datetime
 from bokeh.io import output_notebook
 from bokeh.plotting import figure ,show , curdoc
 from bokeh.io import push_notebook
-from bokeh.models import ColumnDataSource, Legend, CustomJS, Select
+from bokeh.models import ColumnDataSource, Legend, CustomJS, Select, Range1d
 from bokeh.layouts import row, gridplot,layout
 from bokeh.server.server import Server 
 
@@ -49,6 +49,7 @@ class Live_plotter:
             
     
     def update_data_dictionaries(self):
+
         time_now = time.time()
         delta_t = time_now - self.start_time
         #this function updates each dataset object with control surface angle data
@@ -65,11 +66,14 @@ class Live_plotter:
         self.dataset_list[10].addData(delta_t,control_surfaces['starboard_aileron']['servo_demand'])
         self.dataset_list[11].addData(delta_t,control_surfaces['starboard_flap']['servo_demand'])
         self.dataset_list[12].addData(delta_t,airplane_data["pitch"])
-        self.dataset_list[13].addData(delta_t,input_commands["pitch_pid"])
-        
+        self.dataset_list[13].addData(delta_t,input_commands["fd_pitch"])
+       
         #update datasources
         for item in self.dataset_list:
-            item.data_source.stream({"x": item.data[0], "y": item.data[1]},self.points_stored)
+            idx = len(item.data[0])-1
+            #look, it just works
+            item.data_source.stream({"x": [item.data[0][idx]], "y": [item.data[1][idx]]},self.points_stored)
+            
         
 
     def bkapp(self,doc):
@@ -82,19 +86,19 @@ class Live_plotter:
 
         fig1.line(x="x", y="y",legend_label=self.dataset_list[0].name, line_color="tomato", line_width=(2), source=self.dataset_list[0].data_source)
         fig1.line(x="x", y="y",legend_label=self.dataset_list[1].name, line_color="grey", line_width=(2), source=self.dataset_list[1].data_source)
-        fig1.line(x="x", y="y",legend_label=self.dataset_list[2].name, line_color="blue", line_width=(2), source=self.dataset_list[2].data_source)
+        fig1.line(x="x", y="y",legend_label=self.dataset_list[2].name, line_color="lightblue", line_width=(2), source=self.dataset_list[2].data_source)
         fig1.line(x="x", y="y",legend_label=self.dataset_list[3].name, line_color="darkgrey", line_width=(2), source=self.dataset_list[3].data_source)
         fig1.line(x="x", y="y",legend_label=self.dataset_list[4].name, line_color="darkblue", line_width=(2), source=self.dataset_list[4].data_source)
         fig1.line(x="x", y="y",legend_label=self.dataset_list[5].name, line_color="green", line_width=(2), source=self.dataset_list[5].data_source)
         
         fig2.line(x="x", y="y",legend_label=self.dataset_list[6].name, line_color="tomato", line_width=(2), source=self.dataset_list[6].data_source)
         fig2.line(x="x", y="y",legend_label=self.dataset_list[7].name, line_color="grey", line_width=(2), source=self.dataset_list[7].data_source)
-        fig2.line(x="x", y="y",legend_label=self.dataset_list[8].name, line_color="blue", line_width=(2), source=self.dataset_list[8].data_source)
+        fig2.line(x="x", y="y",legend_label=self.dataset_list[8].name, line_color="lightblue", line_width=(2), source=self.dataset_list[8].data_source)
         fig2.line(x="x", y="y",legend_label=self.dataset_list[9].name, line_color="darkgrey", line_width=(2), source=self.dataset_list[9].data_source)
         fig2.line(x="x", y="y",legend_label=self.dataset_list[10].name, line_color="darkblue", line_width=(2), source=self.dataset_list[10].data_source)
         fig2.line(x="x", y="y",legend_label=self.dataset_list[11].name, line_color="green", line_width=(2), source=self.dataset_list[11].data_source)
 
-        fig3.line(x="x", y="y",legend_label=self.dataset_list[12].name, line_color="darkblue", line_width=(2), source=self.dataset_list[12].data_source)
+        fig3.line(x="x", y="y",legend_label=self.dataset_list[12].name, line_color="yellow", line_width=(2), source=self.dataset_list[12].data_source)
         fig3.line(x="x", y="y",legend_label=self.dataset_list[13].name, line_color="green", line_width=(2), source=self.dataset_list[13].data_source)
 
         fig1.legend.location = "top_left"
@@ -103,18 +107,21 @@ class Live_plotter:
         fig1.legend.label_standoff = 2
         fig1.legend.spacing = 1
         fig1.legend.margin = 1
+        fig1.y_range = Range1d(-45,45)
         fig2.legend.location = "top_left"
         fig2.legend.label_text_font_size = "11px"
         fig2.legend.label_text_line_height = 1
         fig2.legend.label_standoff = 2
         fig2.legend.spacing = 1
         fig2.legend.margin = 1
+        fig2.y_range = Range1d(-45,45)
         fig3.legend.location = "top_left"
         fig3.legend.label_text_font_size = "11px"
         fig3.legend.label_text_line_height = 1
         fig3.legend.label_standoff = 2
         fig3.legend.spacing = 1
         fig3.legend.margin = 1
+        fig3.y_range = Range1d(-30,30)
 
         doc.add_root(layout(children=[[fig1,fig2],fig3],sizing_mode="scale_both"))
         

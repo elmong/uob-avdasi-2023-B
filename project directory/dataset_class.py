@@ -9,7 +9,7 @@ class Dataset:
     #object instantiation
     def __init__(self,Name,Num_points):
         #assign object attributes
-        self.data = [[0,0],[0,0]]
+        self.data = [[0],[0]]
         self.name = Name
         self.num_points = Num_points
         self.data_source = None
@@ -35,6 +35,8 @@ class Dataset:
             #just add the new point
             self.data[0].append(x)
             self.data[1].append(y)
+        
+
 
     #create datasource
     def build_datasource(self):
