@@ -30,7 +30,7 @@ TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
-SERVO_RATE_LIMIT = 0.04
+SERVO_RATE_LIMIT = 5
 SUICIDE = False
 
 ################################
@@ -85,6 +85,7 @@ class Servo:
         rate_limit = SERVO_RATE_LIMIT
         if bootup_timer < SERVO_BOOTUP_TIME_TOTAL:
             rate_limit = SERVO_RATE_LIMIT/3
+        rate_limit = rate_limit * flight_controller_timer.DELTA_TIME_SMOOTH
         if (time.time() - self.prev_set_time) > 0 and (bootup_timer > self.channel_num*SERVO_BOOTUP_INTEVRAL):
             self.val = val
             #print((self.val, self.prev_val))
@@ -230,9 +231,10 @@ last_time = time.time()
 
 import time
 
-mavlink_loop_timer = Timer()
+mavlink_loop_timer = Timer() # This is purely for display purposes of the messages recv rate
+flight_controller_timer = Timer() # This is for timing the servo rate limiters
 pico_loop_timer = Timer()
-mavlink_loop_rate_filter = MovingAverage(20)
+mavlink_loop_rate_filter = MovingAverage(20) # Filters stuff out for display
 pico_loop_rate_filter = MovingAverage(5)
 
 flight_elapsed_time = Stopwatch()
@@ -334,6 +336,8 @@ def flight_controller():
         control_surfaces['rudder']['servo_actual'] = RUDDER.get_val()
         control_surfaces['port_flap']['servo_actual'] = LEFT_FLAP.get_val()
         control_surfaces['starboard_flap']['servo_actual'] = RIGHT_FLAP.get_val()
+    
+    flight_controller_timer.update()
 
 async def mavlink_loop():
     while True:
