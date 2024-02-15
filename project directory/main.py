@@ -26,11 +26,11 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
-SERVO_RATE_LIMIT = 3
+SERVO_RATE_LIMIT = 0.04
 SUICIDE = False
 
 ################################
@@ -62,7 +62,7 @@ def request_refresh_rate(connection, mav_commands):
                 )
 
 def set_servo(connection, enum, ratio): ## if you want to use this, remove the manual control command
-    pwm_val = clamper(1500 + ratio * 500, 1000, 2000)
+    pwm_val = ratio_to_pwm(ratio)
     message = connection.mav.command_long_send(
             connection.target_system,
             connection.target_component,
@@ -82,13 +82,14 @@ class Servo:
         self.prev_set_time = time.time()
     def set_val(self, val):
         bootup_timer = flight_elapsed_time.get_time()
-        rate_limit = 0.1
+        rate_limit = SERVO_RATE_LIMIT
         if bootup_timer < SERVO_BOOTUP_TIME_TOTAL:
-            rate_limit = 0.02
+            rate_limit = SERVO_RATE_LIMIT/3
         if (time.time() - self.prev_set_time) > 0 and (bootup_timer > self.channel_num*SERVO_BOOTUP_INTEVRAL):
             self.val = val
             #print((self.val, self.prev_val))
             if (self.val - self.prev_val) > 0:
+                print(self.prev_val + rate_limit, self.val)
                 self.val = min(self.prev_val + rate_limit, self.val)
             else:
                 self.val = max(self.prev_val-rate_limit, self.val)
@@ -307,26 +308,32 @@ def flight_controller():
         flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
-        control_surfaces['left_aileron']['servo_demand'] = input_commands['aileron']
-        control_surfaces['right_aileron']['servo_demand'] = -input_commands['aileron']
-        control_surfaces['left_flap']['servo_demand'] = -flap_angle * 0.4
-        control_surfaces['right_flap']['servo_demand'] = flap_angle
+        control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
+        control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
+        control_surfaces['port_flap']['servo_demand'] = -flap_angle * 0.4
+        control_surfaces['starboard_flap']['servo_demand'] = flap_angle
         if not input_commands['ap_on']:
             control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
             input_commands['pitch_pid'] = 0
             pitch_pid.integrator = 0 # TODO encapsulate this
         else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME)
+            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME) # FIXME change this to mavlink_loop_timer.DELTA_TIME
             input_commands['pitch_pid'] = cmd
             control_surfaces['elevator']['servo_demand'] = -cmd
         control_surfaces['rudder']['servo_demand'] = 0
-        
-        LEFT_AILERON.set_val(control_surfaces['left_aileron']['servo_demand'])
-        RIGHT_AILERON.set_val(control_surfaces['right_aileron']['servo_demand'])
+        LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
+        RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
         ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
         RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
-        LEFT_FLAP.set_val(control_surfaces['left_flap']['servo_demand'])
-        RIGHT_FLAP.set_val(control_surfaces['right_flap']['servo_demand'])
+        LEFT_FLAP.set_val(control_surfaces['port_flap']['servo_demand'])
+        RIGHT_FLAP.set_val(control_surfaces['starboard_flap']['servo_demand'])
+
+        control_surfaces['port_aileron']['servo_actual'] = LEFT_AILERON.get_val()
+        control_surfaces['starboard_aileron']['servo_actual'] = RIGHT_AILERON.get_val()
+        control_surfaces['elevator']['servo_actual'] = ELEVATOR.get_val()
+        control_surfaces['rudder']['servo_actual'] = RUDDER.get_val()
+        control_surfaces['port_flap']['servo_actual'] = LEFT_FLAP.get_val()
+        control_surfaces['starboard_flap']['servo_actual'] = RIGHT_FLAP.get_val()
 
 async def mavlink_loop():
     while True:

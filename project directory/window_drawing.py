@@ -202,13 +202,13 @@ pico_display = PicoDisplay()
 def toggle_servo_manual_control():
     match servo_display.page_number:
         case 1:
-            control_surfaces['left_aileron']['manual_control'] = not control_surfaces['left_aileron']['manual_control']
+            control_surfaces['port_aileron']['manual_control'] = not control_surfaces['port_aileron']['manual_control']
         case 2:
-            control_surfaces['left_flap']['manual_control'] = not control_surfaces['left_flap']['manual_control']
+            control_surfaces['port_flap']['manual_control'] = not control_surfaces['port_flap']['manual_control']
         case 3:
-            control_surfaces['right_aileron']['manual_control'] = not control_surfaces['right_aileron']['manual_control']
+            control_surfaces['starboard_aileron']['manual_control'] = not control_surfaces['starboard_aileron']['manual_control']
         case 4:
-            control_surfaces['right_flap']['manual_control'] = not control_surfaces['right_flap']['manual_control']
+            control_surfaces['starboard_flap']['manual_control'] = not control_surfaces['starboard_flap']['manual_control']
         case 5:
             control_surfaces['elevator']['manual_control'] = not control_surfaces['elevator']['manual_control']
         case 6:
@@ -683,45 +683,56 @@ def draw_servo_diagnostic():
     servo_angle = 0
     surface_angle = 0
     servo_demand = 0
+    servo_angle_actual = 0
     servo_in_manual = False
     title = "CTRL "
 
     match servo_display.page_number:
         case 1:
-            #surface_angle = angle_sensor_data_live['paileron']#control_surfaces['left_aileron']['angle']
+            #surface_angle = angle_sensor_data_live['paileron']#control_surfaces['port_aileron']['angle']
             surface_angle =control_surfaces['port_aileron']['angle']
             servo_demand = control_surfaces['port_aileron']['servo_demand']
+            servo_angle_actual = control_surfaces['port_aileron']['servo_actual']
+            servo_in_manual = control_surfaces['port_aileron']['manual_control']
             title += "- L AILERON"
         case 2:
-            #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['left_flap']['angle']
+            #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['port_flap']['angle']
             surface_angle =control_surfaces['port_flap']['angle']
             servo_demand = control_surfaces['port_flap']['servo_demand']
+            servo_angle_actual = control_surfaces['port_flap']['servo_actual']
+            servo_in_manual = control_surfaces['port_flap']['manual_control']
             title += "- L FLAP"
         case 3:
-            #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['right_aileron']['angle']
+            #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['starboard_aileron']['angle']
             surface_angle =control_surfaces['starboard_aileron']['angle']
             servo_demand = control_surfaces['starboard_aileron']['servo_demand']
+            servo_angle_actual = control_surfaces['starboard_aileron']['servo_actual']
+            servo_in_manual = control_surfaces['starboard_aileron']['manual_control']
             title += "- R AILERON"
         case 4:
-            #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['right_flap']['angle']
+            #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['starboard_flap']['angle']
             surface_angle =control_surfaces['starboard_flap']['angle']
             servo_demand = control_surfaces['starboard_flap']['servo_demand']
+            servo_angle_actual = control_surfaces['starboard_flap']['servo_actual']
+            servo_in_manual = control_surfaces['starboard_flap']['manual_control']
             title += "- R FLAP"
         case 5:
             #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']
             surface_angle =control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
+            servo_angle_actual = control_surfaces['elevator']['servo_actual']
             servo_in_manual = control_surfaces['elevator']['manual_control']
             title += "- ELEVATOR"
         case 6:
             #surface_angle = angle_sensor_data_live['rudder']#control_surfaces['rudder']['angle']
             surface_angle =control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
+            servo_angle_actual = control_surfaces['rudder']['servo_actual']
             servo_in_manual = control_surfaces['rudder']['manual_control']
             title += "- RUDDER"
     
-    servo_angle = servo_demand * 45
-    servo_demand = clamper(1500 + servo_demand * 500, 1000, 2000)
+    servo_angle = servo_angle_actual * 45
+    servo_demand = ratio_to_pwm(servo_demand) # TODO swap this with actual
 
     draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
 
@@ -865,7 +876,7 @@ def pygame_update_loop():
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            quit()
+            os._exit(os.EX_OK)
         elif event.type == pygame.VIDEORESIZE:
             pass
         elif event.type == pygame.MOUSEBUTTONDOWN:

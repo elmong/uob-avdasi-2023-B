@@ -28,31 +28,37 @@ input_commands = {
 control_surfaces = {
     "port_aileron": {
         "servo_demand": 0,
+        "servo_actual": 0, # rate limited
         "angle": 0,
         "manual_control": False,
     },
     "port_flap": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
     "starboard_aileron": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
     "starboard_flap": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
     "elevator": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
     "rudder": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     }
