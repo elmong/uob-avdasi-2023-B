@@ -9,6 +9,7 @@ import math
 import csv
 import os
 import serial
+import threading
 
 from math_helpers import *
 from global_var import *
@@ -17,18 +18,19 @@ import pico_class
 from PID import *
 
 import window_drawing
+import live_plotter_class
 
 root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
 TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = True
+TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
-SERVO_RATE_LIMIT = 3
+SERVO_RATE_LIMIT = 0.04
 SUICIDE = False
 
 ################################
@@ -39,6 +41,9 @@ CHANNEL_RIGHT_AILERON = 3
 CHANNEL_RIGHT_FLAP = 4
 CHANNEL_ELEVATOR = 5
 CHANNEL_RUDDER = 6
+
+SERVO_BOOTUP_INTEVRAL = 0.5
+SERVO_BOOTUP_TIME_TOTAL = 4
 
 ################################
 
@@ -56,31 +61,35 @@ def request_refresh_rate(connection, mav_commands):
                 0  # target address
                 )
 
-def set_servo(connection, enum, pwm_val): ## if you want to use this, remove the manual control command
+def set_servo(connection, enum, ratio): ## if you want to use this, remove the manual control command
+    pwm_val = ratio_to_pwm(ratio)
     message = connection.mav.command_long_send(
             connection.target_system,
             connection.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 
             0,
             enum,
-            1500 + pwm_val * 500,
+            pwm_val,
             0, 0, 0, 0, 
             0
             )
             
 class Servo:
-    def __init__(self, channel_num):
-        self.val = 0
-        self.prev_val = 0
+    def __init__(self, channel_num, start_pos): # start_pos is -1 to 1, to prevent jerk
+        self.val = start_pos
+        self.prev_val = start_pos
         self.channel_num = channel_num
         self.prev_set_time = time.time()
     def set_val(self, val):
-        global DELTA_TIME
-        rate_limit = SERVO_RATE_LIMIT * DELTA_TIME
-        if (time.time() - self.prev_set_time) > 0:
+        bootup_timer = flight_elapsed_time.get_time()
+        rate_limit = SERVO_RATE_LIMIT
+        if bootup_timer < SERVO_BOOTUP_TIME_TOTAL:
+            rate_limit = SERVO_RATE_LIMIT/3
+        if (time.time() - self.prev_set_time) > 0 and (bootup_timer > self.channel_num*SERVO_BOOTUP_INTEVRAL):
             self.val = val
             #print((self.val, self.prev_val))
             if (self.val - self.prev_val) > 0:
+                print(self.prev_val + rate_limit, self.val)
                 self.val = min(self.prev_val + rate_limit, self.val)
             else:
                 self.val = max(self.prev_val-rate_limit, self.val)
@@ -150,7 +159,21 @@ def mavlink_logging():
                         logging_elapsed_time,
                         airplane_data['pitch'],
                         airplane_data['roll'],
-                        airplane_data['yaw']
+                        airplane_data['yaw'],
+                        airplane_data["airspeed"],
+                        airplane_data["aoa"],
+                        control_surfaces["port_aileron"]["servo_demand"],
+                        control_surfaces["port_aileron"]["angle"],
+                        control_surfaces["port_flap"]["servo_demand"],
+                        control_surfaces["port_flap"]["angle"],
+                        control_surfaces["starboard_aileron"]["servo_demand"],
+                        control_surfaces["starboard_aileron"]["angle"],
+                        control_surfaces["starboard_flap"]["servo_demand"],
+                        control_surfaces["starboard_flap"]["angle"],
+                        control_surfaces["elevator"]["servo_demand"],
+                        control_surfaces["elevator"]["angle"],
+                        control_surfaces["rudder"]["servo_demand"],
+                        control_surfaces["rudder"]["angle"]
                         )
     else:
         logging_start_time = 0
@@ -175,27 +198,29 @@ if not TESTING_GRAPHICS_ONLY:
 
 
 #declare pico objects
-pico0 = pico_class.Pico(0, None , False, coms_ports['pico0'], -1)
-#pico1 = pico_class.Pico(1, None , False, coms_ports['pico1'], None)
-#pico2 = pico_class.Pico(2, None , False, coms_ports['pico2'], None)
-#pico3 = pico_class.Pico(3, None , False, coms_ports['pico3'], None)
-#pico4 = pico_class.Pico(4, None , False, coms_ports['pico4'], None)
-#pico5 = pico_class.Pico(5, None , False, coms_ports['pico5'], None)
+pico0 = pico_class.Pico(0, None , False, coms_ports['pico0'], None)
+pico1 = pico_class.Pico(1, None , False, coms_ports['pico1'], None)
+pico2 = pico_class.Pico(2, None , False, coms_ports['pico2'], None)
+pico3 = pico_class.Pico(3, None , False, coms_ports['pico3'], None)
+pico4 = pico_class.Pico(4, None , False, coms_ports['pico4'], None)
+pico5 = pico_class.Pico(5, None , False, coms_ports['pico5'], None)
 
-#pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
-pico_array = [pico0]
+pico_array = [pico0,pico1,pico2,pico3,pico4,pico5]
 
 def connect_picos():
     #if pico connections are closed, attempt connection
     for item in pico_array:
-        if item.Connection_status == False:
-            item.initialize_connection()
+        item.close_connection()
+        item.initialize_connection()
+
 
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
         item.read_message()
-        # print(angle_sensor_data_live['sensor2'])
 
+#declare live data visualisation servers
+control_surface_plot = live_plotter_class.Live_plotter(80)
+control_surface_plot.create_datasets("elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap","elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap","actual_pitch","demanded_pitch")
 
 ################################ LAND OF PREVIOUS VALUES
 
@@ -203,19 +228,15 @@ last_time = time.time()
 
 ############################### THE LOOPING STUFF
 
-def update_refresh_rate():
-    global last_time
-    global DELTA_TIME
-    DELTA_TIME = (time.time() - last_time)
-    DELTA_TIME = max(DELTA_TIME, 0.000001)
-    if DELTA_TIME > 0:
-        refresh_rate = 1/DELTA_TIME
-    else:
-        refresh_rate = 0
-    airplane_data['refresh_rate'] = refresh_rate
-    last_time = time.time()
-    # if refresh_rate < 25:
-    #     print("WARNING REFRESH RATE TOO LOW: " + str(int(refresh_rate)))
+import time
+
+mavlink_loop_timer = Timer()
+pico_loop_timer = Timer()
+mavlink_loop_rate_filter = MovingAverage(20)
+pico_loop_rate_filter = MovingAverage(5)
+
+flight_elapsed_time = Stopwatch()
+flight_elapsed_time.start()
 
 def fetch_messages_and_update():
 
@@ -250,6 +271,10 @@ def fetch_messages_and_update():
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
 
+        mavlink_loop_timer.update() # Move the counter to the not none loop
+        mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())
+        airplane_data['mavlink_refresh_rate'] = mavlink_loop_rate_filter.get_value()
+
     aoa_ssa = connection.recv_match(type = 'AOA_SSA')
     if aoa_ssa is not None:
         aoa_ssa = aoa_ssa.to_dict()
@@ -264,65 +289,122 @@ def fetch_messages_and_update():
     #     sys_status=msg.to_dict()
     #     print(sys_status['drop_rate_comm'])
 
-LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON)
-RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON)
-ELEVATOR = Servo(CHANNEL_ELEVATOR)
-RUDDER = Servo(CHANNEL_RUDDER)
-LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP)
-RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP)
+LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON, start_pos = 0)
+RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON, start_pos = 0)
+ELEVATOR = Servo(CHANNEL_ELEVATOR, start_pos = 0)
+RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
+LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
+RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
 
-pitch_pid = Pid_controller(0.1, 0.0005, 0.0, (-1,1))
+pitch_pid = Pid_controller(0.1, 0.000, 0.06, (-1,1), 10)
 flap_damper = SmoothDamp()
+aileron_damper = SmoothDamp()
 prev_flap_angle = 0
+prev_aileron_angle = 0
 
 def flight_controller():
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
-        flap_angle = flap_damper.smooth_damp(prev_flap_angle, (input_commands['flap_setting']-1), 1.2, 1.5, DELTA_TIME)
+        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
-        control_surfaces['left_aileron']['servo_demand'] = input_commands['aileron']
-        control_surfaces['right_aileron']['servo_demand'] = -input_commands['aileron']
-        control_surfaces['left_flap']['servo_demand'] = -flap_angle * 0.4
-        control_surfaces['right_flap']['servo_demand'] = flap_angle
+        control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
+        control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
+        control_surfaces['port_flap']['servo_demand'] = -flap_angle * 0.4
+        control_surfaces['starboard_flap']['servo_demand'] = flap_angle
         if not input_commands['ap_on']:
             control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
             input_commands['pitch_pid'] = 0
             pitch_pid.integrator = 0 # TODO encapsulate this
         else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME)
+            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME) # FIXME change this to mavlink_loop_timer.DELTA_TIME
             input_commands['pitch_pid'] = cmd
             control_surfaces['elevator']['servo_demand'] = -cmd
         control_surfaces['rudder']['servo_demand'] = 0
-        
-        LEFT_AILERON.set_val(control_surfaces['left_aileron']['servo_demand'])
-        RIGHT_AILERON.set_val(control_surfaces['right_aileron']['servo_demand'])
+        LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
+        RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
         ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
         RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
-        LEFT_FLAP.set_val(control_surfaces['left_flap']['servo_demand'])
-        RIGHT_FLAP.set_val(control_surfaces['right_flap']['servo_demand'])
+        LEFT_FLAP.set_val(control_surfaces['port_flap']['servo_demand'])
+        RIGHT_FLAP.set_val(control_surfaces['starboard_flap']['servo_demand'])
 
-def mavlink_loop():
-    fetch_messages_and_update()
-    flight_controller()
-    update_refresh_rate()
+        control_surfaces['port_aileron']['servo_actual'] = LEFT_AILERON.get_val()
+        control_surfaces['starboard_aileron']['servo_actual'] = RIGHT_AILERON.get_val()
+        control_surfaces['elevator']['servo_actual'] = ELEVATOR.get_val()
+        control_surfaces['rudder']['servo_actual'] = RUDDER.get_val()
+        control_surfaces['port_flap']['servo_actual'] = LEFT_FLAP.get_val()
+        control_surfaces['starboard_flap']['servo_actual'] = RIGHT_FLAP.get_val()
 
-def pygame_loop():
-    window_drawing.pygame_draw_loop()
-    window_drawing.pygame_update_loop()
+async def mavlink_loop():
+    while True:
+        if ui_commands['force_refresh'] == 1:
+            print('Force Refresh')
+            request_refresh_rate(connection, mav_commands)
+            ui_commands['force_refresh'] = 0
+        fetch_messages_and_update()
+        flight_controller()
+            
+        mavlink_logging()
+        await asyncio.sleep(0)
 
 connect_picos()
-def pico_loop(): #where all of the pico's events are handled
-    collect_pico_msgs()
+async def pico_loop(): #where all of the pico's events are handled
+    while True:
+        collect_pico_msgs()
+
+        if ui_commands['pico_refresh_com'] == 1:
+            connect_picos()
+            ui_commands['pico_refresh_com'] = 0
+
+        pico_loop_timer.update()
+        pico_loop_rate_filter.update(pico_loop_timer.get_refresh_rate())
+        airplane_data['pico_refresh_rate'] = pico_loop_rate_filter.get_value()
+        await asyncio.sleep(0)
+
+def live_data_plot_ini():
+    control_surface_plot.ini()
+    
+async def pygame_loop():
+    while True:
+        window_drawing.pygame_draw_loop()
+        window_drawing.pygame_update_loop()
+        await asyncio.sleep(0)
+
+async def async_loop():
+    task1 = asyncio.create_task(mavlink_loop())
+    task2 = asyncio.create_task(pygame_loop())
+    task3 = asyncio.create_task(pico_loop())
+    await asyncio.gather(task1, task2, task3)
+
+#tasks set to run only when graphics only is true
+async def graphics_only_async_loop():
+    task3 = asyncio.create_task(pygame_loop())
+    await asyncio.gather(task3)
+
+def worker():
+    #creating a thread for live data plotter server (because it's a blocking function that is already running an asyncio loop)
+    #control_surface_plot.server.io_loop.add_callback(control_surface_plot.server.show, "/")
+    #control_surface_plot.server.io_loop.add_callback(control_surface_plot.update_data_dictionaries_control_surfaces)
+    sl = control_surface_plot.server.io_loop.start()
+    execute_polling_coroutines_forever(sl)
+    return
+
+def quit_func():
+    #needed to stop live data plotting server
+    #doesnt do anything as it is never called
+    control_surface_plot.shutdown()
+    quit()
+
+live_data_plot_ini()
+t = threading.Thread(target=worker)
+t.start()
+
+
+if TESTING_GRAPHICS_ONLY:
+    ml = asyncio.run(graphics_only_async_loop())  
+else:
+    ml = asyncio.run(async_loop())
     
 
-while True:
 
-    if TESTING_GRAPHICS_ONLY:
-        pygame_loop()
-    else:
-        mavlink_loop()
-        pygame_loop()
-        pico_loop()
-    mavlink_logging()
 

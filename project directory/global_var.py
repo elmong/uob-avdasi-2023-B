@@ -9,7 +9,8 @@ airplane_data = {
     'yaw_rate': 0,
     'aoa': 0,
     'airspeed': 0,
-    'refresh_rate': 0,
+    'mavlink_refresh_rate': 0,
+    'pico_refresh_rate': 0,
 }
     
 input_commands = {
@@ -24,38 +25,40 @@ input_commands = {
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
 }
 
-servo_input_pwm = {
-
-}
-
 control_surfaces = {
-    "left_aileron": {
+    "port_aileron": {
         "servo_demand": 0,
+        "servo_actual": 0, # rate limited
         "angle": 0,
         "manual_control": False,
     },
-    "left_flap": {
+    "port_flap": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
-    "right_aileron": {
+    "starboard_aileron": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
-    "right_flap": {
+    "starboard_flap": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
     "elevator": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     },
     "rudder": {
         "servo_demand": 0,
+        "servo_actual": 0,
         "angle": 0,
         "manual_control": False,
     }
@@ -63,13 +66,15 @@ control_surfaces = {
 
 ui_commands = {
     'logging' : False,
+    'force_refresh': 0, # This is to force the refresh rate back to speed after a current kill
+    'pico_refresh_com' : 0,
 }
 
 #Ports/connection addresses used
 coms_ports = {
     #pico# does not have to match pico ID, just generic assignment of ports to picos
     'pico0' : 'COM6',
-    'pico1' : 'COM13',
+    'pico1' : 'COM8',
     'pico2' : 'COM13',
     'pico3' : 'COM13',
     'pico4' : 'COM13',
@@ -89,29 +94,13 @@ pico_status = {
 #GCS Serial Reader Message Size in Bytes
 serial_reader_msg_size = 32
 
-#Sensor Data
-angle_sensor_data_live = {
-    'sensor1' : 0,
-    'sensor2' : 0,
-    'sensor3' : 0,
-    'sensor4' : 0,
-    'sensor5' : 0,
-    'sensor6' : 0,
-    'sensor7' : 0,
-    'sensor8' : 0,
-    'sensor9' : 0,
-    'sensor10' : 0,
-    'sensor11' : 0,
-    'sensor12' : 0
-}
-
 #file path to store data to
 file_path = 'Results.csv'
 
 PID_values = {
     'Kp' : 1.0,
-    'Ki' : 0.1,
-    'Kd' : 0.01,
+    'Ki' : 0, #0.1,
+    'Kd' : 0, #0.01,
     'setpoint' : 0,
     'output_limits' : (-45,45)
 }

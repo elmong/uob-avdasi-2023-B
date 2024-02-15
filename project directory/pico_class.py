@@ -1,5 +1,6 @@
 import serial
 import GCS_serial_reader
+from global_var import *
 
 #this is a class used to store and manipulate the picos' connection and its status
 class Pico:
@@ -23,9 +24,11 @@ class Pico:
     #attempt to open the connection
     def initialize_connection(self):
         try:    
+            self.COM_port = coms_ports['pico'+str(self.Local_ID)]
             Pico_serial_connection = serial.Serial(self.COM_port) # opens the connection
             self.Connection = Pico_serial_connection
             self.Connection_status = True
+            print('Connection opened on ' + self.COM_port)
             
         except:
             self.Connection_status = False
@@ -34,7 +37,14 @@ class Pico:
         # Pico_serial_connection = serial.Serial(self.COM_port) # opens the connection
         # self.Connection = Pico_serial_connection
         # self.Connection_status = True
-            
+
+    def close_connection(self):
+        if self.Connection_status == True:
+            self.Connection.close()
+            self.Connection_status = False
+            print('Connection closed on ' + self.COM_port)
+
+         
 
     def read_message(self):
         try:

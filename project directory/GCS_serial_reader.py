@@ -3,7 +3,7 @@
 
 #---Import Libraries---#
 from asyncio.windows_events import NULL
-from global_var import angle_sensor_data_live , serial_reader_msg_size , file_path
+from global_var import control_surfaces , serial_reader_msg_size , file_path
 import serial
 
 #---Functions---#
@@ -21,9 +21,9 @@ def Unpacker(msg):
     #_______________________________________________________#
     #data packets are structured, 
     #[0] is the ID of the Sensor, where 
-    #   0 is the sensor connected to --- (ADC1) & --- (ADC2)
-    #   1 is the sensor connected to --- (ADC1) & --- (ADC2)
-    #   2 is the sensor connected to --- (ADC1) & --- (ADC2)
+    #   0 is the sensor connected to Elevator (ADC1) & Rudder (ADC2)
+    #   1 is the sensor connected to PAileron (ADC1) & PFlap (ADC2)
+    #   2 is the sensor connected to SAileron (ADC1) & SFlap (ADC2)
     #   3 is the sensor connected to --- (ADC1) & --- (ADC2)
     #   4 is the sensor connected to --- (ADC1) & --- (ADC2)
     #   5 is the sensor connected to --- (ADC1) & --- (ADC2)
@@ -50,23 +50,23 @@ def Unpacker(msg):
     #update values in global variables
     match msgArray[0]: 
         case '0':
-            angle_sensor_data_live['sensor1'] = msgArray[2]
-            angle_sensor_data_live['sensor2'] = msgArray[3]
+            control_surfaces['elevator']['angle'] = float(msgArray[2])
+            control_surfaces['rudder']['angle'] = float(msgArray[3])
         case '1':
-            angle_sensor_data_live['sensor3'] = msgArray[2]
-            angle_sensor_data_live['sensor4'] = msgArray[3]
+            control_surfaces['port_aileron']['angle'] = float(msgArray[2])
+            control_surfaces['port_flap']['angle'] = float(msgArray[3])
         case '2':
-            angle_sensor_data_live['sensor5'] = msgArray[2]
-            angle_sensor_data_live['sensor6'] = msgArray[3]
+            control_surfaces['starboard_aileron']['angle'] = float(msgArray[2])
+            control_surfaces['starboard_flap']['angle'] = float(msgArray[3])
         case '3':
-            angle_sensor_data_live['sensor7'] = msgArray[2]
-            angle_sensor_data_live['sensor8'] = msgArray[3]
+            control_surfaces['elevator']['servo_pos'] = float(msgArray[2])
+            control_surfaces['rudder']['servo_pos'] = float(msgArray[3])
         case '4':
-            angle_sensor_data_live['sensor9'] = msgArray[2]
-            angle_sensor_data_live['sensor10'] = msgArray[3]
+            control_surfaces['port_aileron']['servo_pos'] = float(msgArray[2])
+            control_surfaces['port_flap']['servo_pos'] = float(msgArray[3])
         case '5':
-            angle_sensor_data_live['sensor11'] = msgArray[2]
-            angle_sensor_data_live['sensor12'] = msgArray[3]   
+            control_surfaces['starboard_aileron']['servo_pos'] = float(msgArray[2])
+            control_surfaces['starboard_flap']['servo_pos'] = float(msgArray[3])
 
     return msgArray
     

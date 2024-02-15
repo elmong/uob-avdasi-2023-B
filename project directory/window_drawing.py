@@ -174,28 +174,53 @@ class ServoDisplay:
         self.page_number = max(self.page_number, 1)
 servo_display = ServoDisplay()
 
+class PicoDisplay:
+    def __init__(self):
+        self.page_number = 1
+    def increase(self):
+        self.page_number += 1
+        self.page_number = min(self.page_number, 6)
+    def decrease(self):
+        self.page_number -= 1
+        self.page_number = max(self.page_number, 1)
+    def increase_com(self):
+        pico_number = str(self.page_number-1)
+        pico_com = coms_ports['pico'+pico_number]
+        pico_com_num = int(pico_com.lstrip('COM')) +1
+        coms_ports['pico'+pico_number] = 'COM' + str(pico_com_num)
+    def decrease_com(self):
+        pico_number = str(self.page_number-1)
+        pico_com = coms_ports['pico'+pico_number]
+        pico_com_num = int(pico_com.lstrip('COM')) -1
+        pico_com_num = max(0, pico_com_num)
+        coms_ports['pico'+pico_number] = 'COM' + str(pico_com_num)
+        
+
+
+pico_display = PicoDisplay()
+
 def toggle_servo_manual_control():
     match servo_display.page_number:
         case 1:
-            control_surfaces['left_aileron']['manual_control'] = not control_surfaces['left_aileron']['manual_control']
+            control_surfaces['port_aileron']['manual_control'] = not control_surfaces['port_aileron']['manual_control']
         case 2:
-            control_surfaces['left_flap']['manual_control'] = not control_surfaces['left_flap']['manual_control']
+            control_surfaces['port_flap']['manual_control'] = not control_surfaces['port_flap']['manual_control']
         case 3:
-            control_surfaces['right_aileron']['manual_control'] = not control_surfaces['right_aileron']['manual_control']
+            control_surfaces['starboard_aileron']['manual_control'] = not control_surfaces['starboard_aileron']['manual_control']
         case 4:
-            control_surfaces['right_flap']['manual_control'] = not control_surfaces['right_flap']['manual_control']
+            control_surfaces['starboard_flap']['manual_control'] = not control_surfaces['starboard_flap']['manual_control']
         case 5:
             control_surfaces['elevator']['manual_control'] = not control_surfaces['elevator']['manual_control']
         case 6:
             control_surfaces['rudder']['manual_control'] = not control_surfaces['rudder']['manual_control']
 
 ############ The land of button creation
-quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: quit())
+quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=lambda: os._exit(os.EX_OK))
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
 arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
-button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 1")
+button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
-button_5 = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "BUTTON 5")
+pico_com_refresh_button = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PICO RFSH", callback = lambda: ui_commands.update(pico_refresh_com=1))
 fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
 ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = ap_on) 
 
@@ -208,8 +233,11 @@ flaps_up_button.force_state(True) # by default is up
 
 step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
-page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ") 
-page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ") 
+page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = pico_display.increase) 
+page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = pico_display.decrease) 
+
+pico_up_button = Button(1002, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
+pico_dn_button = Button(1002, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
@@ -217,15 +245,6 @@ page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['
 servo_manual_conntrol_button = ToggleButton(1514, 288, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_manual_control, suppress_drawing = True) 
 
 ############  I love OOP
-
-DELTA_TIME = 0.1
-delta_time_record = time.time()
-def GET_DELTA_TIME():
-    global delta_time_record
-    global DELTA_TIME
-    current_time = time.time()
-    DELTA_TIME = current_time - delta_time_record
-    delta_time_record = current_time
 
 def draw_line(coord_1, coord_2, width, colour):
     pygame.draw.line(screen, colour, coord_1, coord_2, width)
@@ -335,7 +354,11 @@ def draw_log_sys():
     draw_rectangle(510, 825, 1182-510, 1000-825, colours['light_blue'], 2)
     draw_line((510, 825+30), (1182, 825+30), 2, colours['light_blue'])
     pygame.draw.rect(screen, colours['light_blue'], (510,825,30,30))
-    draw_text("LOGGING SYSTEM", fonts['helvetica_small'], colours['pearl'], 550, 827)
+    draw_text("PICO CONFIG - PICO "+str(pico_display.page_number-1), fonts['helvetica_small'], colours['pearl'], 550, 827)
+    
+    buff = coms_ports['pico'+str(pico_display.page_number-1)]
+
+    draw_text(buff, fonts['dbxl'],  colours['pearl'],800, 900)
     # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
@@ -425,8 +448,8 @@ def draw_spd_tape(spd):
     draw_line((80, 783), (180, 783), 2, colours['light_blue'])
 
     global prev_spd
-    spd = spd_damper.smooth_damp(prev_spd, spd, 0.5, 50, DELTA_TIME)
-    spd_trend = (spd - prev_spd)/DELTA_TIME
+    spd = spd_damper.smooth_damp(spd, 0.5, 50, pygame_loop_timer.DELTA_TIME)
+    spd_trend = (spd - prev_spd)/pygame_loop_timer.DELTA_TIME
     prev_spd = spd
 
     # the tape
@@ -568,13 +591,21 @@ def draw_menu():
     draw_text_xcentered('SYSTEM MENU ACCESS', fonts['dbxl_small'], colours['pearl'], 1920/2, 92)
 
 def draw_refresh_rate():
-    rate = airplane_data['refresh_rate']
+    rate = airplane_data['mavlink_refresh_rate']
     if rate > 25:
-        pygame.draw.rect(screen, colours['green_blue'], (20,96,min(rate, 190),7))
-        draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['green_blue'], 20, 80)
+        pygame.draw.rect(screen, colours['green_blue'], (20,96,min(rate, 133),7))
+        draw_text( 'MAVLINK : ' + str(int(rate)), fonts['dbxl_small'], colours['green_blue'], 20, 80)
     else:
-        pygame.draw.rect(screen, colours['red'], (20,96,min(rate, 190),7))
-        draw_text( 'DATASTREAM : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
+        pygame.draw.rect(screen, colours['red'], (20,96,min(rate, 133),7))
+        draw_text( 'MAVLINK : ' + str(int(rate)), fonts['dbxl_small'], colours['red'], 20, 80)
+    
+    rate2 = airplane_data['pico_refresh_rate']
+    if rate2 > 25:
+        pygame.draw.rect(screen, colours['green_blue'], (210,96,min(rate2, 133),7))
+        draw_text( 'PICO DATA : ' + str(int(rate2)), fonts['dbxl_small'], colours['green_blue'], 210, 80)
+    else:
+        pygame.draw.rect(screen, colours['red'], (210,96,min(rate2, 133),7))
+        draw_text( 'PICO DATA : ' + str(int(rate2)), fonts['dbxl_small'], colours['red'], 210, 80)
 
 class MouseControl():
     def __init__(self):
@@ -610,8 +641,8 @@ class MouseControl():
             self.prev_roll_command = roll_command
             self.prev_pitch_command = pitch_command
     
-        input_commands['elevator'] = self.elevator_damper.smooth_damp(input_commands['elevator'], pitch_command, 0.07, 1000000, DELTA_TIME)
-        input_commands['aileron'] = self.aileron_damper.smooth_damp(input_commands['aileron'], roll_command, 0.07, 1000000, DELTA_TIME)
+        input_commands['elevator'] = self.elevator_damper.smooth_damp(pitch_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
+        input_commands['aileron'] = self.aileron_damper.smooth_damp(roll_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
     
     def draw(self):
         draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['grey'], 4)
@@ -652,43 +683,56 @@ def draw_servo_diagnostic():
     servo_angle = 0
     surface_angle = 0
     servo_demand = 0
+    servo_angle_actual = 0
     servo_in_manual = False
     title = "CTRL "
 
     match servo_display.page_number:
         case 1:
-            surface_angle = control_surfaces['left_aileron']['angle']
-            servo_demand = control_surfaces['left_aileron']['servo_demand']
-            servo_in_manual = control_surfaces['left_aileron']['manual_control']
+            #surface_angle = angle_sensor_data_live['paileron']#control_surfaces['port_aileron']['angle']
+            surface_angle =control_surfaces['port_aileron']['angle']
+            servo_demand = control_surfaces['port_aileron']['servo_demand']
+            servo_angle_actual = control_surfaces['port_aileron']['servo_actual']
+            servo_in_manual = control_surfaces['port_aileron']['manual_control']
             title += "- L AILERON"
         case 2:
-            surface_angle = control_surfaces['left_flap']['angle']
-            servo_demand = control_surfaces['left_flap']['servo_demand']
-            servo_in_manual = control_surfaces['left_flap']['manual_control']
+            #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['port_flap']['angle']
+            surface_angle =control_surfaces['port_flap']['angle']
+            servo_demand = control_surfaces['port_flap']['servo_demand']
+            servo_angle_actual = control_surfaces['port_flap']['servo_actual']
+            servo_in_manual = control_surfaces['port_flap']['manual_control']
             title += "- L FLAP"
         case 3:
-            surface_angle = control_surfaces['right_aileron']['angle']
-            servo_demand = control_surfaces['right_aileron']['servo_demand']
-            servo_in_manual = control_surfaces['right_aileron']['manual_control']
+            #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['starboard_aileron']['angle']
+            surface_angle =control_surfaces['starboard_aileron']['angle']
+            servo_demand = control_surfaces['starboard_aileron']['servo_demand']
+            servo_angle_actual = control_surfaces['starboard_aileron']['servo_actual']
+            servo_in_manual = control_surfaces['starboard_aileron']['manual_control']
             title += "- R AILERON"
         case 4:
-            surface_angle = control_surfaces['right_flap']['angle']
-            servo_demand = control_surfaces['right_flap']['servo_demand']
-            servo_in_manual = control_surfaces['right_flap']['manual_control']
+            #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['starboard_flap']['angle']
+            surface_angle =control_surfaces['starboard_flap']['angle']
+            servo_demand = control_surfaces['starboard_flap']['servo_demand']
+            servo_angle_actual = control_surfaces['starboard_flap']['servo_actual']
+            servo_in_manual = control_surfaces['starboard_flap']['manual_control']
             title += "- R FLAP"
         case 5:
-            surface_angle = control_surfaces['elevator']['angle']
+            #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']
+            surface_angle =control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
+            servo_angle_actual = control_surfaces['elevator']['servo_actual']
             servo_in_manual = control_surfaces['elevator']['manual_control']
             title += "- ELEVATOR"
         case 6:
-            surface_angle = control_surfaces['rudder']['angle']
+            #surface_angle = angle_sensor_data_live['rudder']#control_surfaces['rudder']['angle']
+            surface_angle =control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
+            servo_angle_actual = control_surfaces['rudder']['servo_actual']
             servo_in_manual = control_surfaces['rudder']['manual_control']
             title += "- RUDDER"
     
-    servo_angle = servo_demand * 45
-    servo_demand = 1500 + servo_demand * 500
+    servo_angle = servo_angle_actual * 45
+    servo_demand = ratio_to_pwm(servo_demand) # TODO swap this with actual
 
     draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
 
@@ -791,7 +835,6 @@ def draw_hdg_tape(hdg):
         (compass_center_x + triangle_height*math.cos(math.radians((-hdg+90))), compass_center_y + triangle_height*math.sin(math.radians((-hdg+90))))
         )
     ) 
-    pygame.draw.circle(screen, colours['dark_grey'], (compass_center_x, compass_center_y), 4)
 
 ap_on_time = 0
 def draw_ap_status(flag):
@@ -819,6 +862,8 @@ def draw_buttons():
 
 scaled_drawing_surface_size = [0,0]
 
+pygame_loop_timer = Timer()
+
 def pygame_update_loop():
     mouse_beforetransform_x, mouse_beforetransform_y = pygame.mouse.get_pos()
     screen_w, screen_h = screen.get_size()
@@ -831,7 +876,7 @@ def pygame_update_loop():
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            quit()
+            os._exit(os.EX_OK)
         elif event.type == pygame.VIDEORESIZE:
             pass
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -857,7 +902,7 @@ def pygame_update_loop():
     for button in Button.instances:
         button.check_hot(MOUSE_X, MOUSE_Y)
 
-    GET_DELTA_TIME() # should come before anything else
+    pygame_loop_timer.update() # should come before anything else
     mouse_control.update()
     stepper.update()
     
@@ -871,7 +916,7 @@ def pygame_draw_loop(): #loop
     # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
     #print(input_commands['elevator'], input_commands['aileron'])
 
-    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid']*30)
+    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid']*10)
     draw_spd_tape(airplane_data['airspeed'])
     #draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()
