@@ -98,9 +98,9 @@ serial_reader_msg_size = 32
 file_path = 'Results.csv'
 
 PID_values = {
-    'Kp' : 1.0,
+    'Kp' : 0.01,
     'Ki' : 0, #0.1,
-    'Kd' : 0, #0.01,
+    'Kd' : 0.006, #0.01,
     'setpoint' : 0,
     'output_limits' : (-45,45)
 }

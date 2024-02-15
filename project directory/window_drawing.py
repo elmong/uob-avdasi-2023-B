@@ -233,11 +233,20 @@ flaps_up_button.force_state(True) # by default is up
 
 step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
-page_fwd_button_logging = Button(1092, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = pico_display.increase) 
-page_back_button_logging = Button(1002, 826, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = pico_display.decrease) 
+page_fwd_button_pico = Button(1092+45, 826, 45, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = pico_display.increase) 
+page_back_button_pico = Button(1002+90, 826, 45, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = pico_display.decrease) 
 
-pico_up_button = Button(1002, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
-pico_dn_button = Button(1002, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+pico_up_button = Button(1002+80, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
+pico_dn_button = Button(1002+80, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+
+pid_p_up_button = Button(1002-500+70-25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
+pid_p_dn_button = Button(1002-500+70-25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+
+pid_i_up_button = Button(1002-400+35 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
+pid_i_dn_button = Button(1002-400+35 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+
+pid_d_up_button = Button(1002-300+25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
+pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
@@ -350,16 +359,24 @@ def draw_adi(roll, pitch, pitch_bar):
         pygame.draw.line(screen, colours['bgd'], (x-fd_size-1, fd_y), (x+fd_size+1, fd_y), 5)
         pygame.draw.line(screen, colours['green'], (x-fd_size, fd_y), (x+fd_size, fd_y), 3)
 
-def draw_log_sys():
-    draw_rectangle(510, 825, 1182-510, 1000-825, colours['light_blue'], 2)
-    draw_line((510, 825+30), (1182, 825+30), 2, colours['light_blue'])
-    pygame.draw.rect(screen, colours['light_blue'], (510,825,30,30))
-    draw_text("PICO CONFIG - PICO "+str(pico_display.page_number-1), fonts['helvetica_small'], colours['pearl'], 550, 827)
+def draw_pico_coms():
+    draw_rectangle(510+360, 825, 1182-510-360, 1000-825, colours['light_blue'], 2)
+    draw_line((510+360, 825+30), (1182, 825+30), 2, colours['light_blue'])
+    pygame.draw.rect(screen, colours['light_blue'], (510+360,825,30,30))
+    draw_text("PICO "+str(pico_display.page_number-1), fonts['helvetica_small'], colours['pearl'], 550+360, 827)
     
     buff = coms_ports['pico'+str(pico_display.page_number-1)]
 
-    draw_text(buff, fonts['dbxl'],  colours['pearl'],800, 900)
+    draw_text('COM', fonts['dbxl_title'],  colours['pearl'],800+120+20, 910+8)
+    draw_text(buff.replace("COM", ""), fonts['dbxl'],  colours['green'],800+190+20, 910)
     # draw_text("// MESSAGE LOG AND WARNINGS", fonts['helvetica_supersmall'], colours['pearl'], 515, 860)
+
+def draw_pid_coef_box():#
+    draw_rectangle(510, 825, 1182-510-340, 1000-825, colours['light_blue'], 2)
+
+    draw_text_xcentered(PID_values['Kp'], fonts['dbxl_title'], colours['green'], 1002-500+70-25 + 35, 900-40)
+    draw_text_xcentered(PID_values['Ki'], fonts['dbxl_title'], colours['green'], 1002-400+35 + 35, 900-40)
+    draw_text_xcentered(PID_values['Kd'], fonts['dbxl_title'], colours['green'], 1002-300+25 + 35, 900-40)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
     draw_line((x, y+60), (x, y-60), 2, colours['pearl'])
@@ -921,7 +938,8 @@ def pygame_draw_loop(): #loop
     #draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()
     draw_refresh_rate()
-    draw_log_sys()
+    draw_pico_coms()
+    draw_pid_coef_box()
     draw_ctrl_diag()
     draw_aoa_bar(airplane_data['pitch'])
     stepper.draw()

@@ -25,7 +25,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -298,7 +298,7 @@ RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
 LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
 RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
 
-pitch_pid = Pid_controller(0.1, 0.000, 0.06, (-1,1), 10)
+pitch_pid = Pid_controller(PID_values['output_limits'], 10)
 flap_damper = SmoothDamp()
 aileron_damper = SmoothDamp()
 prev_flap_angle = 0
@@ -307,7 +307,7 @@ prev_aileron_angle = 0
 def flight_controller():
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
-        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME)
+        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME) #FIXME
         prev_flap_angle = flap_angle
 
         control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
@@ -319,10 +319,12 @@ def flight_controller():
             input_commands['pitch_pid'] = 0
             pitch_pid.integrator = 0 # TODO encapsulate this
         else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME) # FIXME change this to mavlink_loop_timer.DELTA_TIME
+            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME, PID_values['Kp'], PID_values['Ki'], PID_values['Kd']) # FIXME change this to mavlink_loop_timer.DELTA_TIME
+            cmd = cmd * 45 # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
             input_commands['pitch_pid'] = cmd
-            control_surfaces['elevator']['servo_demand'] = -cmd
+            control_surfaces['elevator']['servo_demand'] = -cmd # Has to be -1 to 1 because this is setting servo
         control_surfaces['rudder']['servo_demand'] = 0
+
         LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
         RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
         ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
