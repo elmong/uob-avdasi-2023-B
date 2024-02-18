@@ -1,4 +1,5 @@
 import time
+import math
 
 def lerp(point1, point2, x): # a helper
     x1, x2 = point1
@@ -93,6 +94,22 @@ class MovingAverage:
             return None  # Return None if no values in the filter
 
         return sum(self.values) / len(self.values)
+
+class RCLowPassFilter: # Auto timing. No DT needed.
+    def __init__(self, cutoff_freq):
+        self.RC = 1/(2 * math.pi * cutoff_freq)
+        self.y_n = 0
+        self.y_n1 = 0
+        self.prev_sammple_time = time.time()
+    def update(self, x_n): 
+        dt = time.time() - self.prev_sammple_time
+        self.alpha = dt / (self.RC + dt)
+        self.y_n = self.alpha * x_n + (1-self.alpha) * self.y_n1
+        #housekeeping below
+        self.y_n1 = self.y_n
+        self.prev_sammple_time = time.time()
+    def get_value(self):
+        return self.y_n
 
 class Timer:
     def __init__(self):

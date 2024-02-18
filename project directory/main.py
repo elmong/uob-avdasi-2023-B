@@ -325,6 +325,8 @@ def flight_controller():
             control_surfaces['elevator']['servo_demand'] = -cmd # Has to be -1 to 1 because this is setting servo
         control_surfaces['rudder']['servo_demand'] = 0
 
+        ################################################## Boilerplate
+
         LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
         RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
         ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
