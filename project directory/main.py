@@ -121,7 +121,7 @@ def init_values():
     if TESTING_REAL_PLANE_CHANNELS:
         for i in range(1, 17):  # 16 Chanels
             param_name = f'SERVO{i}_FUNCTION'
-            set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+            set_param(connection, param_name, 1, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
             param_name = f'SERVO{i}_MIN'
             set_param(connection, param_name, 1000, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
             param_name = f'SERVO{i}_MAX'
