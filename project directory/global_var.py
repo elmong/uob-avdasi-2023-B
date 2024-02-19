@@ -18,7 +18,7 @@ input_commands = {
     'aileron': 0,
     'rudder': 0,
     'throttle': 0,
-    'fd_on' : False,
+    'gcs_in_control' : False,
     'ap_on' : False,
     'fd_pitch': 0,
     'pitch_pid': 0,

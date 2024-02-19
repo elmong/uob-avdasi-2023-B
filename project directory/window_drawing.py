@@ -72,7 +72,7 @@ colours = {
 
 class Button:
     instances = []
-    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False):
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False, suppress_clicking = False):
         Button.instances.append(self)
         self.x = x
         self.y = y
@@ -85,6 +85,7 @@ class Button:
         self.callback = callback
         self.font = font
         self.suppress_drawing = suppress_drawing
+        self.suppress_clicking = suppress_clicking
 
     def draw(self):
         if not self.suppress_drawing:
@@ -94,8 +95,9 @@ class Button:
                 draw_text_centered(self.text_row2, self.font, self.colour, self.x + self.width/2, self.y + self.height/2 + 10)
             else:
                 draw_text_centered(self.text_row1, self.font, self.colour, self.x + self.width/2, self.y + self.height/2)
-        if self.is_hovered:
-            draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
+        if not self.suppress_clicking:
+            if self.is_hovered:
+                draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
     
     def check_hot(self, MOUSE_X, MOUSE_Y):
         self.is_hovered = (
@@ -104,11 +106,12 @@ class Button:
         )
     
     def actuate(self):
-        if self.is_hovered:
-            if not self.callback:
-                print("WARNING! Button " + str(self.text_row1) + " has no callback!")
-                return
-            self.callback()
+        if not self.suppress_clicking:
+            if self.is_hovered:
+                if not self.callback:
+                    print("WARNING! Button " + str(self.text_row1) + " has no callback!")
+                    return
+                self.callback()
 
 class ToggleButton(Button):
     def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False): # suppress_drawing makes it draw nothing
@@ -128,13 +131,15 @@ class ToggleButton(Button):
             else:
                 draw_text_centered(self.text_row1, self.font, text_colour, self.x + self.width/2, self.y + self.height/2+3)
 
-        if self.is_hovered:
-            draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
+        if not self.suppress_clicking:
+            if self.is_hovered:
+                draw_rectangle(self.x-4, self.y-4, self.width+7, self.height+7, self.colour, 2)
 
     def actuate(self):
-        if self.is_hovered:
-            self.state = not self.state # change the status of the button
-            super().actuate() # at the same time toggle a function
+        if not self.suppress_clicking:
+            if self.is_hovered:
+                self.state = not self.state # change the status of the button
+                super().actuate() # at the same time toggle a function
     def force_state(self, state):
         self.state = state
 
@@ -160,9 +165,6 @@ setflaps = SetFlaps()
 
 def ap_on():
     input_commands.update(ap_on=not input_commands['ap_on'])
-    if input_commands['ap_on']:
-        input_commands.update(fd_on=True)
-        fd_button.force_state(True)
 
 class ServoDisplay:
     def __init__(self):
@@ -196,9 +198,25 @@ class PicoDisplay:
         pico_com_num = max(0, pico_com_num)
         coms_ports['pico'+pico_number] = 'COM' + str(pico_com_num)
         
-
-
 pico_display = PicoDisplay()
+
+class manualMoveServo:
+    def __init__(self):
+        pass
+    def trim_servo(self, increment):
+        match servo_display.page_number:
+            case 1:
+                control_surfaces['port_aileron']['servo_demand'] +=increment
+            case 2:
+                control_surfaces['port_flap']['servo_demand'] +=increment
+            case 3:
+                control_surfaces['starboard_aileron']['servo_demand'] +=increment
+            case 4:
+                control_surfaces['starboard_flap']['servo_demand'] +=increment
+            case 5:
+                control_surfaces['elevator']['servo_demand'] +=increment
+            case 6:
+                control_surfaces['rudder']['servo_demand'] +=increment
 
 def toggle_servo_manual_control():
     match servo_display.page_number:
@@ -215,6 +233,40 @@ def toggle_servo_manual_control():
         case 6:
             control_surfaces['rudder']['manual_control'] = not control_surfaces['rudder']['manual_control']
 
+def update_manual_control_trim_buttons():
+    match servo_display.page_number:
+        case 1:
+            increase_servo_button.suppress_drawing = not control_surfaces['port_aileron']['manual_control']
+            increase_servo_button.suppress_clicking = not control_surfaces['port_aileron']['manual_control']
+            decrease_servo_button.suppress_drawing = not control_surfaces['port_aileron']['manual_control']
+            decrease_servo_button.suppress_clicking = not control_surfaces['port_aileron']['manual_control']
+        case 2:
+            increase_servo_button.suppress_drawing = not control_surfaces['port_flap']['manual_control']
+            increase_servo_button.suppress_clicking = not control_surfaces['port_flap']['manual_control']
+            decrease_servo_button.suppress_drawing = not control_surfaces['port_flap']['manual_control']
+            decrease_servo_button.suppress_clicking = not control_surfaces['port_flap']['manual_control']
+        case 3:
+            increase_servo_button.suppress_drawing = not control_surfaces['starboard_aileron']['manual_control']
+            increase_servo_button.suppress_clicking = not control_surfaces['starboard_aileron']['manual_control']
+            decrease_servo_button.suppress_drawing = not control_surfaces['starboard_aileron']['manual_control']
+            decrease_servo_button.suppress_clicking = not control_surfaces['starboard_aileron']['manual_control']
+        case 4:
+            increase_servo_button.suppress_drawing = not control_surfaces['starboard_flap']['manual_control']
+            increase_servo_button.suppress_clicking = not control_surfaces['starboard_flap']['manual_control']
+            decrease_servo_button.suppress_drawing = not control_surfaces['starboard_flap']['manual_control']
+            decrease_servo_button.suppress_clicking = not control_surfaces['starboard_flap']['manual_control']
+        case 5:
+            increase_servo_button.suppress_drawing = not control_surfaces['elevator']['manual_control']
+            increase_servo_button.suppress_clicking = not control_surfaces['elevator']['manual_control']
+            decrease_servo_button.suppress_drawing = not control_surfaces['elevator']['manual_control']
+            decrease_servo_button.suppress_clicking = not control_surfaces['elevator']['manual_control']
+        case 6:
+            increase_servo_button.suppress_drawing = not control_surfaces['rudder']['manual_control']
+            increase_servo_button.suppress_clicking = not control_surfaces['rudder']['manual_control']
+            decrease_servo_button.suppress_drawing = not control_surfaces['rudder']['manual_control']
+            decrease_servo_button.suppress_clicking = not control_surfaces['rudder']['manual_control']
+
+
 ############ The land of button creation
 quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=GCS_EXIT_PROGRAM)
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
@@ -222,7 +274,7 @@ arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['d
 button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
 pico_com_refresh_button = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PICO RFSH", callback = lambda: ui_commands.update(pico_refresh_com=1))
-fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "FLT", "DIR", callback = lambda: input_commands.update(fd_on=not input_commands['fd_on'])) # This code is so dirty I hate it
+fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "TMX", "CTRL", callback = lambda: input_commands.update(gcs_in_control=not input_commands['gcs_in_control'])) # This code is so dirty I hate it
 ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = ap_on) 
 
 data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING", callback = lambda: ui_commands.update(logging=not ui_commands['logging'])) 
@@ -251,6 +303,9 @@ pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], f
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
+
+increase_servo_button = Button(1739-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase, suppress_drawing = True, suppress_clicking = True) 
+decrease_servo_button = Button(1649-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease, suppress_drawing = True, suppress_clicking = True) 
 
 servo_manual_conntrol_button = ToggleButton(1514, 288, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_manual_control, suppress_drawing = True) 
 
@@ -354,7 +409,7 @@ def draw_adi(roll, pitch, pitch_bar):
     screen.set_clip(None)
     draw_image_centered(textures['wing'], x, y+6)
 
-    if input_commands['fd_on']:
+    if input_commands['ap_on']:
         fd_size = 132
         fd_y = clamper( y - pitch_bar * pitch_px_per_deg, y-210, y+210)
         pygame.draw.line(screen, colours['bgd'], (x-fd_size-1, fd_y), (x+fd_size+1, fd_y), 5)
@@ -891,6 +946,8 @@ def pygame_update_loop():
 
     MOUSE_X = remap((display_w-scaled_drawing_surface_size[0])/2, (display_w-scaled_drawing_surface_size[0])/2+scaled_drawing_surface_size[0], 0, SCREEN_WIDTH, mouse_beforetransform_x)
     MOUSE_Y = remap((display_h-scaled_drawing_surface_size[1])/2, (display_h-scaled_drawing_surface_size[1])/2+scaled_drawing_surface_size[1], 0, SCREEN_HEIGHT, mouse_beforetransform_y)
+
+    update_manual_control_trim_buttons()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

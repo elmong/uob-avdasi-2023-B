@@ -24,9 +24,10 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = True
+TESTING_ON_SIM = False
+TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_DO_BOKEH = True
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
@@ -90,7 +91,6 @@ class Servo:
             self.val = val
             #print((self.val, self.prev_val))
             if (self.val - self.prev_val) > 0:
-                print(self.prev_val + rate_limit, self.val)
                 self.val = min(self.prev_val + rate_limit, self.val)
             else:
                 self.val = max(self.prev_val-rate_limit, self.val)
@@ -240,6 +240,25 @@ pico_loop_rate_filter = MovingAverage(5)
 flight_elapsed_time = Stopwatch()
 flight_elapsed_time.start()
 
+prev_gcs_in_control = False
+
+def flip_servo_modes_tmx_gcs():
+    global prev_gcs_in_control
+    if TESTING_REAL_PLANE_CHANNELS:
+        if prev_gcs_in_control != input_commands['gcs_in_control']:
+            if input_commands['gcs_in_control']:
+                for i in range(1, 17):  # 16 Chanels
+                    param_name = f'SERVO{i}_FUNCTION'
+                    set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+                prev_gcs_in_control = input_commands['gcs_in_control']
+                print('GCS TAKEOVER')
+            else:
+                for i in range(1, 7):  # 6 Chanels
+                    param_name = f'SERVO{i}_FUNCTION'
+                    set_param(connection, param_name, 1, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
+                prev_gcs_in_control = input_commands['gcs_in_control']
+                print('TMX TAKEOVER')
+
 def fetch_messages_and_update():
 
     ################## WARNING ##################
@@ -307,7 +326,7 @@ prev_aileron_angle = 0
 def flight_controller():
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
-        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, mavlink_loop_timer.DELTA_TIME) #FIXME
+        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, flight_controller_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
         control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
@@ -317,9 +336,9 @@ def flight_controller():
         if not input_commands['ap_on']:
             control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
             input_commands['pitch_pid'] = 0
-            pitch_pid.integrator = 0 # TODO encapsulate this
+            pitch_pid.reset_integrator()
         else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME, PID_values['Kp'], PID_values['Ki'], PID_values['Kd']) # FIXME change this to mavlink_loop_timer.DELTA_TIME
+            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME, PID_values['Kp'], PID_values['Ki'], PID_values['Kd']) # FIXME change this to flight_controller_timer.DELTA_TIME
             cmd = cmd * 45 # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
             input_commands['pitch_pid'] = cmd
             control_surfaces['elevator']['servo_demand'] = -cmd # Has to be -1 to 1 because this is setting servo
@@ -327,12 +346,13 @@ def flight_controller():
 
         ################################################## Boilerplate
 
-        LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
-        RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
-        ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
-        RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
-        LEFT_FLAP.set_val(control_surfaces['port_flap']['servo_demand'])
-        RIGHT_FLAP.set_val(control_surfaces['starboard_flap']['servo_demand'])
+        if input_commands['gcs_in_control']:
+            LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
+            RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
+            ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
+            RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
+            LEFT_FLAP.set_val(control_surfaces['port_flap']['servo_demand'])
+            RIGHT_FLAP.set_val(control_surfaces['starboard_flap']['servo_demand'])
 
         control_surfaces['port_aileron']['servo_actual'] = LEFT_AILERON.get_val()
         control_surfaces['starboard_aileron']['servo_actual'] = RIGHT_AILERON.get_val()
@@ -349,6 +369,7 @@ async def mavlink_loop():
             print('Force Refresh')
             request_refresh_rate(connection, mav_commands)
             ui_commands['force_refresh'] = 0
+        flip_servo_modes_tmx_gcs()
         fetch_messages_and_update()
         flight_controller()
             
@@ -403,10 +424,10 @@ def quit_func():
     control_surface_plot.shutdown()
     quit()
 
-live_data_plot_ini()
-t = threading.Thread(target=worker)
-t.start()
-
+if TESTING_DO_BOKEH:
+    live_data_plot_ini()
+    t = threading.Thread(target=worker)
+    t.start()
 
 if TESTING_GRAPHICS_ONLY:
     ml = asyncio.run(graphics_only_async_loop())  

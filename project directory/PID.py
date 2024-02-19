@@ -31,3 +31,6 @@ class Pid_controller:
         self.output_unclamped = self.output
         self.output = max(self.Limits[0], min(self.Limits[1],self.output))
         return self.output
+
+    def reset_integrator(self):
+        self.integrator = 0
