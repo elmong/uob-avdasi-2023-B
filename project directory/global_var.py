@@ -101,7 +101,7 @@ file_path = 'Results.csv'
 PID_values = {
     'Kp' : 4, # how many degrees of elevator (del e) per degree of pitch error?
     'Ki' : 0,
-    'Kd' : 0,
+    'Kd' : 1,
     'setpoint' : 0,
     'output_limits' : (-45,45)
 }

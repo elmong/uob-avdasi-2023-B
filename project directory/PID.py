@@ -11,8 +11,12 @@ class Pid_controller:
 
         self.derivative_filter = MovingAverage(Window)
 
-    def update(self, SP, PV, dT, Kp, Ki, Kd):
-        rate  = (PV - self.prev_pv) / dT
+    def update(self, SP, PV, dT, Kp, Ki, Kd, **kwargs):
+        rate = 0
+        if kwargs['feed_in_rate']:
+            rate = kwargs['feed_in_rate']
+        else:
+            rate  = (PV - self.prev_pv) / dT
         self.derivative_filter.update(rate)
 
         self.prev_pv = PV

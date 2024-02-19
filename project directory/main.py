@@ -320,7 +320,7 @@ RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
 LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
 RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
 
-pitch_pid = Pid_controller(PID_values['output_limits'], 4)
+pitch_pid = Pid_controller(PID_values['output_limits'], 1)
 flap_damper = SmoothDamp()
 aileron_damper = SmoothDamp()
 prev_flap_angle = 0
@@ -347,7 +347,7 @@ def flight_controller():
                 input_commands['pitch_pid_unclamped'] = 0
                 pitch_pid.reset_integrator()
             else:
-                cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'])
+                cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
                 # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
                 input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
                 input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
