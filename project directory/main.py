@@ -13,6 +13,7 @@ import threading
 
 from math_helpers import *
 from global_var import *
+from global_func import *
 import GCS_serial_reader
 import pico_class
 from PID import *
@@ -24,10 +25,10 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = False
+TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
-TESTING_DO_BOKEH = True
+TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
@@ -183,6 +184,8 @@ def mavlink_logging():
 
 ################################ THE INITIALISATION STUFF
 
+GCS_BEGIN_PROGRAM()
+
 if not TESTING_GRAPHICS_ONLY:
     window_drawing.draw_bad_screen()
     connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
@@ -240,7 +243,7 @@ pico_loop_rate_filter = MovingAverage(5)
 flight_elapsed_time = Stopwatch()
 flight_elapsed_time.start()
 
-prev_gcs_in_control = False
+prev_gcs_in_control = True
 
 def flip_servo_modes_tmx_gcs():
     global prev_gcs_in_control
@@ -317,7 +320,7 @@ RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
 LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
 RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
 
-pitch_pid = Pid_controller(PID_values['output_limits'], 10)
+pitch_pid = Pid_controller(PID_values['output_limits'], 4)
 flap_damper = SmoothDamp()
 aileron_damper = SmoothDamp()
 prev_flap_angle = 0
@@ -329,20 +332,28 @@ def flight_controller():
         flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, flight_controller_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
-        control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
-        control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
-        control_surfaces['port_flap']['servo_demand'] = -flap_angle * 0.4
-        control_surfaces['starboard_flap']['servo_demand'] = flap_angle
-        if not input_commands['ap_on']:
-            control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
-            input_commands['pitch_pid'] = 0
-            pitch_pid.reset_integrator()
-        else:
-            cmd = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], DELTA_TIME, PID_values['Kp'], PID_values['Ki'], PID_values['Kd']) # FIXME change this to flight_controller_timer.DELTA_TIME
-            cmd = cmd * 45 # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
-            input_commands['pitch_pid'] = cmd
-            control_surfaces['elevator']['servo_demand'] = -cmd # Has to be -1 to 1 because this is setting servo
-        control_surfaces['rudder']['servo_demand'] = 0
+        if not control_surfaces['port_aileron']['manual_control']:
+            control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
+        if not control_surfaces['starboard_aileron']['manual_control']:
+            control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
+        if not control_surfaces['port_flap']['manual_control']:
+            control_surfaces['port_flap']['servo_demand'] = -flap_angle * 0.4
+        if not control_surfaces['starboard_flap']['manual_control']:
+            control_surfaces['starboard_flap']['servo_demand'] = flap_angle
+        if not control_surfaces['elevator']['manual_control']:
+            if not input_commands['ap_on']:
+                control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
+                input_commands['pitch_pid'] = 0
+                input_commands['pitch_pid_unclamped'] = 0
+                pitch_pid.reset_integrator()
+            else:
+                cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'])
+                # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
+                input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
+                input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
+                control_surfaces['elevator']['servo_demand'] = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting servo
+        if not control_surfaces['rudder']['manual_control']:
+            control_surfaces['rudder']['servo_demand'] = 0
 
         ################################################## Boilerplate
 

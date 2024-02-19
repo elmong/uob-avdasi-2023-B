@@ -18,10 +18,11 @@ input_commands = {
     'aileron': 0,
     'rudder': 0,
     'throttle': 0,
-    'gcs_in_control' : False,
+    'gcs_in_control' : True,
     'ap_on' : False,
     'fd_pitch': 0,
     'pitch_pid': 0,
+    'pitch_pid_unclamped': 0,
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
 }
 
@@ -98,9 +99,9 @@ serial_reader_msg_size = 32
 file_path = 'Results.csv'
 
 PID_values = {
-    'Kp' : 0.01,
-    'Ki' : 0, #0.1,
-    'Kd' : 0.006, #0.01,
+    'Kp' : 4, # how many degrees of elevator (del e) per degree of pitch error?
+    'Ki' : 0,
+    'Kd' : 0,
     'setpoint' : 0,
     'output_limits' : (-45,45)
 }

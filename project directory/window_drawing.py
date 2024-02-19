@@ -21,6 +21,7 @@ CONTROL_CURSOR_SPRING_BACK = True
 
 MOUSE_X = 0
 MOUSE_Y = 0
+MOUSE_DOWN = False
 
 fonts = {
     'default': pygame.font.Font('freesansbold.ttf', 32),
@@ -72,7 +73,7 @@ colours = {
 
 class Button:
     instances = []
-    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False, suppress_clicking = False):
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, continuous_callback = None, suppress_drawing = False, suppress_clicking = False):
         Button.instances.append(self)
         self.x = x
         self.y = y
@@ -83,6 +84,7 @@ class Button:
         self.text_row2 = text_row2
         self.is_hovered = False
         self.callback = callback
+        self.continuous_callback = continuous_callback
         self.font = font
         self.suppress_drawing = suppress_drawing
         self.suppress_clicking = suppress_clicking
@@ -109,13 +111,24 @@ class Button:
         if not self.suppress_clicking:
             if self.is_hovered:
                 if not self.callback:
-                    print("WARNING! Button " + str(self.text_row1) + " has no callback!")
+                    if not self.continuous_callback:
+                        print("WARNING! Button " + str(self.text_row1) + " has no callback!")
                     return
                 self.callback()
+    
+    def continuous_actuate(self):
+        global MOUSE_DOWN
+        if not self.suppress_clicking:
+            if self.is_hovered and MOUSE_DOWN:
+                if not self.continuous_callback:
+                    if not self.callback:
+                        print("WARNING! Button " + str(self.text_row1) + " has no callback!")
+                    return
+                self.continuous_callback()
 
 class ToggleButton(Button):
-    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, suppress_drawing = False): # suppress_drawing makes it draw nothing
-        super().__init__( x, y, width, height, colour, font, text_row1, text_row2, callback, suppress_drawing)
+    def __init__(self, x, y, width, height, colour, font, text_row1, text_row2=None, callback = None, continuous_callback = None, suppress_drawing = False): # suppress_drawing makes it draw nothing
+        super().__init__( x, y, width, height, colour, font, text_row1, text_row2, callback, continuous_callback, suppress_drawing)
         self.state = False
     def draw(self):
         if not self.suppress_drawing:
@@ -206,17 +219,22 @@ class manualMoveServo:
     def trim_servo(self, increment):
         match servo_display.page_number:
             case 1:
-                control_surfaces['port_aileron']['servo_demand'] +=increment
+                control_surfaces['port_aileron']['servo_demand'] = clamper(control_surfaces['port_aileron']['servo_demand'] +increment, -1, 1)
             case 2:
-                control_surfaces['port_flap']['servo_demand'] +=increment
+                control_surfaces['port_flap']['servo_demand'] = clamper(control_surfaces['port_flap']['servo_demand'] +increment, -1, 1)
             case 3:
-                control_surfaces['starboard_aileron']['servo_demand'] +=increment
+                control_surfaces['starboard_aileron']['servo_demand'] = clamper(control_surfaces['starboard_aileron']['servo_demand'] +increment, -1, 1)
             case 4:
-                control_surfaces['starboard_flap']['servo_demand'] +=increment
+                control_surfaces['starboard_flap']['servo_demand'] = clamper(control_surfaces['starboard_flap']['servo_demand'] +increment, -1, 1)
             case 5:
-                control_surfaces['elevator']['servo_demand'] +=increment
+                control_surfaces['elevator']['servo_demand'] = clamper(control_surfaces['elevator']['servo_demand'] +increment, -1, 1)
             case 6:
-                control_surfaces['rudder']['servo_demand'] +=increment
+                control_surfaces['port_aileron']['servo_demand'] = clamper(control_surfaces['port_aileron']['servo_demand'] +increment, -1, 1)
+    def increase_button_callback(self):
+        self.trim_servo(0.01)
+    def decrease_button_callback(self):
+        self.trim_servo(-0.01)
+manual_move_servo = manualMoveServo()
 
 def toggle_servo_manual_control():
     match servo_display.page_number:
@@ -274,7 +292,8 @@ arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['d
 button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
 pico_com_refresh_button = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PICO RFSH", callback = lambda: ui_commands.update(pico_refresh_com=1))
-fd_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "TMX", "CTRL", callback = lambda: input_commands.update(gcs_in_control=not input_commands['gcs_in_control'])) # This code is so dirty I hate it
+gcs_in_control_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "GCS", "CTRL", callback = lambda: input_commands.update(gcs_in_control=not input_commands['gcs_in_control'])) # This code is so dirty I hate it
+gcs_in_control_button.force_state(True)
 ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = ap_on) 
 
 data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING", callback = lambda: ui_commands.update(logging=not ui_commands['logging'])) 
@@ -304,8 +323,8 @@ pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], f
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
 
-increase_servo_button = Button(1739-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase, suppress_drawing = True, suppress_clicking = True) 
-decrease_servo_button = Button(1649-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease, suppress_drawing = True, suppress_clicking = True) 
+increase_servo_button = Button(1739-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " >> ", continuous_callback = manual_move_servo.increase_button_callback, suppress_drawing = True, suppress_clicking = True) 
+decrease_servo_button = Button(1649-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " << ", continuous_callback = manual_move_servo.decrease_button_callback, suppress_drawing = True, suppress_clicking = True) 
 
 servo_manual_conntrol_button = ToggleButton(1514, 288, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_manual_control, suppress_drawing = True) 
 
@@ -512,7 +531,8 @@ def draw_ctrl_diag():
 
 
 
-spd_damper = SmoothDamp()
+spd_filter = RCLowPassFilter(0.2)
+trend_filter = MovingAverage(60)
 prev_spd = 0
 def draw_spd_tape(spd):
     # the frame
@@ -521,8 +541,10 @@ def draw_spd_tape(spd):
     draw_line((80, 783), (180, 783), 2, colours['light_blue'])
 
     global prev_spd
-    spd = spd_damper.smooth_damp(spd, 0.5, 50, pygame_loop_timer.DELTA_TIME)
-    spd_trend = (spd - prev_spd)/pygame_loop_timer.DELTA_TIME
+    spd_filter.update(spd)
+    spd = spd_filter.get_value()
+    trend_filter.update((spd - prev_spd)/pygame_loop_timer.DELTA_TIME)
+    spd_trend = trend_filter.get_value()
     prev_spd = spd
 
     # the tape
@@ -718,24 +740,34 @@ class MouseControl():
         input_commands['aileron'] = self.aileron_damper.smooth_damp(roll_command, 0.07, 1000000, pygame_loop_timer.DELTA_TIME)
     
     def draw(self):
-        draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['grey'], 4)
-        draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['pearl'], 2)
+        if input_commands['gcs_in_control']:
+            draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['grey'], 4)
+            draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['pearl'], 2)
 
-        x = lerp( (-1, 1) , (self.cursor_ctrl_box_x, self.cursor_ctrl_box_x+self.cursor_ctrl_side_length), input_commands['aileron']/self.cursor_ctrl_boost_factor)
-        y = lerp( (-1, 1) , (self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), input_commands['elevator']/self.cursor_ctrl_boost_factor)
-        offsets = 3
-        line_length = 14
-        pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 2)
-        pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets , y + offsets + line_length), 2)
+            x = lerp( (-1, 1) , (self.cursor_ctrl_box_x, self.cursor_ctrl_box_x+self.cursor_ctrl_side_length), input_commands['aileron']/self.cursor_ctrl_boost_factor)
+            y = lerp( (-1, 1) , (self.cursor_ctrl_box_y, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), input_commands['elevator']/self.cursor_ctrl_boost_factor)
+            offsets = 3
+            line_length = 14
+            pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets + line_length, y + offsets), 2)
+            pygame.draw.line(screen, colours['pearl'], (x + offsets, y + offsets) , (x + offsets , y + offsets + line_length), 2)
 
-        pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets - line_length, y + offsets), 2)
-        pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets , y + offsets + line_length), 2)
+            pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets - line_length, y + offsets), 2)
+            pygame.draw.line(screen, colours['pearl'], (x - offsets, y + offsets) , (x - offsets , y + offsets + line_length), 2)
 
-        pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets + line_length, y - offsets), 2)
-        pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets , y - offsets - line_length), 2)
+            pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets + line_length, y - offsets), 2)
+            pygame.draw.line(screen, colours['pearl'], (x + offsets, y - offsets) , (x + offsets , y - offsets - line_length), 2)
 
-        pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 2)
-        pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 2)
+            pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets - line_length, y - offsets), 2)
+            pygame.draw.line(screen, colours['pearl'], (x - offsets, y - offsets) , (x - offsets , y - offsets - line_length), 2)
+        else:
+            draw_rectangle(self.cursor_ctrl_box_x, self.cursor_ctrl_box_y, self.cursor_ctrl_side_length, self.cursor_ctrl_side_length, colours['red'], 3)
+            pygame.draw.line(screen, colours['red'], (self.cursor_ctrl_box_x, self.cursor_ctrl_box_y) , (self.cursor_ctrl_box_x+self.cursor_ctrl_side_length*0.35, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length*0.35), 4)
+            pygame.draw.line(screen, colours['red'], (self.cursor_ctrl_box_x+self.cursor_ctrl_side_length*0.65, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length*0.65) , (self.cursor_ctrl_box_x+self.cursor_ctrl_side_length, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), 4)
+
+            pygame.draw.line(screen, colours['red'], (self.cursor_ctrl_box_x+self.cursor_ctrl_side_length, self.cursor_ctrl_box_y) , (self.cursor_ctrl_box_x+self.cursor_ctrl_side_length-self.cursor_ctrl_side_length*0.35, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length*0.35), 4)
+            pygame.draw.line(screen, colours['red'], (self.cursor_ctrl_box_x+self.cursor_ctrl_side_length-self.cursor_ctrl_side_length*0.65, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length*0.65) , (self.cursor_ctrl_box_x, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length), 4)
+
+            draw_text_centered("TMX CONTROL", fonts['dbxl_title'], colours['red'], self.cursor_ctrl_box_x+self.cursor_ctrl_side_length/2, self.cursor_ctrl_box_y+self.cursor_ctrl_side_length/2)
 
 
 mouse_control = MouseControl()
@@ -756,7 +788,7 @@ def draw_servo_diagnostic():
     servo_angle = 0
     surface_angle = 0
     servo_demand = 0
-    servo_angle_actual = 0
+    servo_ratio_actual = 0
     servo_in_manual = False
     title = "CTRL "
 
@@ -765,60 +797,61 @@ def draw_servo_diagnostic():
             #surface_angle = angle_sensor_data_live['paileron']#control_surfaces['port_aileron']['angle']
             surface_angle =control_surfaces['port_aileron']['angle']
             servo_demand = control_surfaces['port_aileron']['servo_demand']
-            servo_angle_actual = control_surfaces['port_aileron']['servo_actual']
+            servo_ratio_actual = control_surfaces['port_aileron']['servo_actual']
             servo_in_manual = control_surfaces['port_aileron']['manual_control']
             title += "- L AILERON"
         case 2:
             #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['port_flap']['angle']
             surface_angle =control_surfaces['port_flap']['angle']
             servo_demand = control_surfaces['port_flap']['servo_demand']
-            servo_angle_actual = control_surfaces['port_flap']['servo_actual']
+            servo_ratio_actual = control_surfaces['port_flap']['servo_actual']
             servo_in_manual = control_surfaces['port_flap']['manual_control']
             title += "- L FLAP"
         case 3:
             #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['starboard_aileron']['angle']
             surface_angle =control_surfaces['starboard_aileron']['angle']
             servo_demand = control_surfaces['starboard_aileron']['servo_demand']
-            servo_angle_actual = control_surfaces['starboard_aileron']['servo_actual']
+            servo_ratio_actual = control_surfaces['starboard_aileron']['servo_actual']
             servo_in_manual = control_surfaces['starboard_aileron']['manual_control']
             title += "- R AILERON"
         case 4:
             #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['starboard_flap']['angle']
             surface_angle =control_surfaces['starboard_flap']['angle']
             servo_demand = control_surfaces['starboard_flap']['servo_demand']
-            servo_angle_actual = control_surfaces['starboard_flap']['servo_actual']
+            servo_ratio_actual = control_surfaces['starboard_flap']['servo_actual']
             servo_in_manual = control_surfaces['starboard_flap']['manual_control']
             title += "- R FLAP"
         case 5:
             #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']
             surface_angle =control_surfaces['elevator']['angle']
             servo_demand = control_surfaces['elevator']['servo_demand']
-            servo_angle_actual = control_surfaces['elevator']['servo_actual']
+            servo_ratio_actual = control_surfaces['elevator']['servo_actual']
             servo_in_manual = control_surfaces['elevator']['manual_control']
             title += "- ELEVATOR"
         case 6:
             #surface_angle = angle_sensor_data_live['rudder']#control_surfaces['rudder']['angle']
             surface_angle =control_surfaces['rudder']['angle']
             servo_demand = control_surfaces['rudder']['servo_demand']
-            servo_angle_actual = control_surfaces['rudder']['servo_actual']
+            servo_ratio_actual = control_surfaces['rudder']['servo_actual']
             servo_in_manual = control_surfaces['rudder']['manual_control']
             title += "- RUDDER"
     
-    servo_angle = servo_angle_actual * 45
     servo_demand = ratio_to_pwm(servo_demand) # TODO swap this with actual
 
     draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
 
     draw_text(servo_display.page_number, fonts['helvetica'], colours['dark_blue'], 948, 215)
 
-    draw_image_centered_rotated(textures['servo_arm'], 1099, 370, servo_angle)
+    # FIXME the * 45 is not good
+    draw_image_centered_rotated(textures['servo_arm'], 1099, 370, servo_ratio_actual * 45)
 
     draw_image_centered_rotated(textures['surface'], 1280, 370, surface_angle)
 
-    pygame.draw.line(screen, colours['green_blue'], (int(1099 + 83 * math.sin(math.radians(servo_angle))), int(370 - 83*math.cos(math.radians(servo_angle)))) , (int(1280 + 88 * math.sin(math.radians(surface_angle-13.72))), int(370 - 88*math.cos(math.radians(surface_angle-13.72)))), 4)
+    # FIXME the * 45 is not good
+    pygame.draw.line(screen, colours['green_blue'], (int(1099 + 83 * math.sin(math.radians(servo_ratio_actual * 45))), int(370 - 83*math.cos(math.radians(servo_ratio_actual * 45)))) , (int(1280 + 88 * math.sin(math.radians(surface_angle-13.72))), int(370 - 88*math.cos(math.radians(surface_angle-13.72)))), 4)
 
     draw_text("// TMS CMD POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218)
-    draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(servo_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237)
+    draw_text("VAL: "+("{:.2f}".format(servo_ratio_actual)), fonts['helvetica_massive'], colours['pearl'], 1625, 237)
     if not servo_in_manual:
         draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302)
     else:
@@ -827,7 +860,8 @@ def draw_servo_diagnostic():
         draw_text_centered("MANUAL OVRD", fonts['dbxl_title'], colours['pearl'], 1702, 306)
 
     draw_text("// HALL SENSOR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
-    draw_text(("+" if servo_angle >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
+    # FIXME this should not be servo_ratio_actual
+    draw_text(("+" if servo_ratio_actual >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
     draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
 
     if not servo_in_manual:
@@ -942,7 +976,7 @@ def pygame_update_loop():
     screen_w, screen_h = screen.get_size()
     display_w, display_h = display.get_size()
 
-    global MOUSE_X, MOUSE_Y
+    global MOUSE_X, MOUSE_Y, MOUSE_DOWN
 
     MOUSE_X = remap((display_w-scaled_drawing_surface_size[0])/2, (display_w-scaled_drawing_surface_size[0])/2+scaled_drawing_surface_size[0], 0, SCREEN_WIDTH, mouse_beforetransform_x)
     MOUSE_Y = remap((display_h-scaled_drawing_surface_size[1])/2, (display_h-scaled_drawing_surface_size[1])/2+scaled_drawing_surface_size[1], 0, SCREEN_HEIGHT, mouse_beforetransform_y)
@@ -955,6 +989,7 @@ def pygame_update_loop():
         elif event.type == pygame.VIDEORESIZE:
             pass
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            MOUSE_DOWN = True
             #stuff about the buttons
             for button in Button.instances:
                 # the condition to check if mouse is over is already included in the check_hot step than changes a flag
@@ -971,11 +1006,13 @@ def pygame_update_loop():
                 stepper.match_handle()
 
         elif event.type == pygame.MOUSEBUTTONUP:
+            MOUSE_DOWN = False
             mouse_control.detach()
             stepper.detach()
 
     for button in Button.instances:
         button.check_hot(MOUSE_X, MOUSE_Y)
+        button.continuous_actuate()
 
     pygame_loop_timer.update() # should come before anything else
     mouse_control.update()
@@ -991,7 +1028,7 @@ def pygame_draw_loop(): #loop
     # draw_text_xcentered( 'AOA : ' + str(round(airplane_data['aoa'], 1)) +' DEG', fonts['dbxl'], colours['pearl'], 1920/2, 1080/2 - 30*3)
     #print(input_commands['elevator'], input_commands['aileron'])
 
-    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid']*10)
+    draw_adi(airplane_data['roll'], airplane_data['pitch'], input_commands['pitch_pid_unclamped'] * 10)
     draw_spd_tape(airplane_data['airspeed'])
     #draw_spd_tape(15*math.sin(time.time()/10)**2)
     draw_menu()
