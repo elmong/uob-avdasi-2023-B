@@ -383,7 +383,6 @@ async def mavlink_loop():
         flip_servo_modes_tmx_gcs()
         fetch_messages_and_update()
         flight_controller()
-            
         mavlink_logging()
         await asyncio.sleep(0)
 
