@@ -254,13 +254,13 @@ def flip_servo_modes_tmx_gcs():
                     param_name = f'SERVO{i}_FUNCTION'
                     set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
                 prev_gcs_in_control = input_commands['gcs_in_control']
-                print('GCS TAKEOVER')
+                print('***********GCS TAKEOVER***********')
             else:
                 for i in range(1, 7):  # 6 Chanels
                     param_name = f'SERVO{i}_FUNCTION'
                     set_param(connection, param_name, 1, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
                 prev_gcs_in_control = input_commands['gcs_in_control']
-                print('TMX TAKEOVER')
+                print('***********TMX TAKEOVER***********')
 
 def fetch_messages_and_update():
 
@@ -313,12 +313,12 @@ def fetch_messages_and_update():
     #     sys_status=msg.to_dict()
     #     print(sys_status['drop_rate_comm'])
 
-LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON, start_pos = 0)
-RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON, start_pos = 0)
-ELEVATOR = Servo(CHANNEL_ELEVATOR, start_pos = 0)
-RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
-LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
-RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
+LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON, start_pos = control_surfaces['port_aileron']['servo_actual'])
+LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = control_surfaces['port_flap']['servo_actual'])
+RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON, start_pos = control_surfaces['starboard_aileron']['servo_actual'])
+RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = control_surfaces['starboard_flap']['servo_actual'])
+ELEVATOR = Servo(CHANNEL_ELEVATOR, start_pos = control_surfaces['elevator']['servo_actual'])
+RUDDER = Servo(CHANNEL_RUDDER, start_pos = control_surfaces['rudder']['servo_actual'])
 
 pitch_pid = Pid_controller(PID_values['output_limits'], 1)
 flap_damper = SmoothDamp()
@@ -327,6 +327,16 @@ prev_flap_angle = 0
 prev_aileron_angle = 0
 
 def flight_controller():
+
+    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
+    # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
+    input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
+    input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
+    if not input_commands['ap_on']:
+        input_commands['pitch_pid'] = 0
+        input_commands['pitch_pid_unclamped'] = 0
+        pitch_pid.reset_integrator()
+
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
         flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, flight_controller_timer.DELTA_TIME)
@@ -342,15 +352,8 @@ def flight_controller():
             control_surfaces['starboard_flap']['servo_demand'] = flap_angle
         if not control_surfaces['elevator']['manual_control']:
             if not input_commands['ap_on']:
-                control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
-                input_commands['pitch_pid'] = 0
-                input_commands['pitch_pid_unclamped'] = 0
-                pitch_pid.reset_integrator()
+                control_surfaces['elevator']['servo_demand'] = -input_commands['elevator'] 
             else:
-                cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
-                # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
-                input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
-                input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
                 control_surfaces['elevator']['servo_demand'] = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting servo
         if not control_surfaces['rudder']['manual_control']:
             control_surfaces['rudder']['servo_demand'] = 0

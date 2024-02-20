@@ -103,5 +103,5 @@ PID_values = {
     'Ki' : 0,
     'Kd' : 1,
     'setpoint' : 0,
-    'output_limits' : (-45,45)
+    'output_limits' : [-45,45]
 }

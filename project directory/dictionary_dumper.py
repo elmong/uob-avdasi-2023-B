@@ -2,7 +2,7 @@ import os
 import json
 
 root_path = os.path.abspath(os.path.dirname(__file__))
-filesave_path = root_path+"/saved_global_var.json"
+filesave_path = root_path+"\saved_global_var.json"
 
 def save(list_of_dict):
     print("Saving Global Var to " + filesave_path)

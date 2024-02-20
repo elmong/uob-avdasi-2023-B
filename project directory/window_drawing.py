@@ -161,23 +161,15 @@ class SetFlaps():
         pass
     def to(self):
         input_commands['flap_setting'] = 1
-        flaps_up_button.force_state(False)
-        flaps_to_button.force_state(True)
-        flaps_ld_button.force_state(False)
     def ldg(self):
         input_commands['flap_setting'] = 2
-        flaps_up_button.force_state(False)
-        flaps_to_button.force_state(False)
-        flaps_ld_button.force_state(True)
     def up(self):
         input_commands['flap_setting'] = 0
-        flaps_up_button.force_state(True)
-        flaps_to_button.force_state(False)
-        flaps_ld_button.force_state(False)
+    def update_button_states(self):
+        flaps_up_button.force_state(input_commands['flap_setting'] == 0)
+        flaps_to_button.force_state(input_commands['flap_setting'] == 1)
+        flaps_ld_button.force_state(input_commands['flap_setting'] == 2)
 setflaps = SetFlaps()
-
-def ap_on():
-    input_commands.update(ap_on=not input_commands['ap_on'])
 
 class ServoDisplay:
     def __init__(self):
@@ -236,6 +228,23 @@ class manualMoveServo:
         self.trim_servo(-0.01)
 manual_move_servo = manualMoveServo()
 
+class pidGainEdit:
+    def __init__(self):
+        pass
+    def modify_Kp(self, inc):
+        PID_values['Kp'] += inc
+        PID_values['Kp'] = round(PID_values['Kp'], 2)
+        PID_values['Kp'] = max(PID_values['Kp'], 0)
+    def modify_Ki(self, inc):
+        PID_values['Ki'] += inc
+        PID_values['Ki'] = round(PID_values['Ki'], 2)
+        PID_values['Ki'] = max(PID_values['Ki'], 0)
+    def modify_Kd(self, inc):
+        PID_values['Kd'] += inc
+        PID_values['Kd'] = round(PID_values['Kd'], 2)
+        PID_values['Kd'] = max(PID_values['Kd'], 0)
+pid_gain_edit = pidGainEdit()
+
 def toggle_servo_manual_control():
     match servo_display.page_number:
         case 1:
@@ -286,22 +295,21 @@ def update_manual_control_trim_buttons():
 
 
 ############ The land of button creation
-quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback=GCS_EXIT_PROGRAM)
+quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUIT", callback = lambda: GCS_EXIT_PROGRAM([PID_values, coms_ports, input_commands, control_surfaces]))
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
 arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
 button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
 button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
 pico_com_refresh_button = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PICO RFSH", callback = lambda: ui_commands.update(pico_refresh_com=1))
 gcs_in_control_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "GCS", "CTRL", callback = lambda: input_commands.update(gcs_in_control=not input_commands['gcs_in_control'])) # This code is so dirty I hate it
-gcs_in_control_button.force_state(True)
-ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = ap_on) 
+gcs_in_control_button.force_state(input_commands['gcs_in_control'])
+ap_button = ToggleButton(100, 835+90, 120, 68, colours['pearl'], fonts['dbxl_title'], "AUTO", "FLT", callback = lambda: input_commands.update(ap_on=not input_commands['ap_on'])) 
 
 data_button = ToggleButton(250, 835+90, 230, 68, colours['pearl'], fonts['dbxl_title'], "DATA", "LOGGING", callback = lambda: ui_commands.update(logging=not ui_commands['logging'])) 
 
 flaps_up_button = ToggleButton(250, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "UP", callback = setflaps.up) 
 flaps_to_button = ToggleButton(250 + 75 + 5, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "TO", callback = setflaps.to) 
 flaps_ld_button = ToggleButton(250 + 75 * 2 + 10, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "LG", callback = setflaps.ldg) 
-flaps_up_button.force_state(True) # by default is up
 
 step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
@@ -311,14 +319,14 @@ page_back_button_pico = Button(1002+90, 826, 45, 29, colours['pearl'], fonts['he
 pico_up_button = Button(1002+80, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
 pico_dn_button = Button(1002+80, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
 
-pid_p_up_button = Button(1002-500+70-25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
-pid_p_dn_button = Button(1002-500+70-25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+pid_p_up_button = Button(1002-500+70-25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Kp(0.01)) 
+pid_p_dn_button = Button(1002-500+70-25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Kp(-0.01)) 
 
-pid_i_up_button = Button(1002-400+35 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
-pid_i_dn_button = Button(1002-400+35 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+pid_i_up_button = Button(1002-400+35 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Ki(0.01)) 
+pid_i_dn_button = Button(1002-400+35 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Ki(-0.01)) 
 
-pid_d_up_button = Button(1002-300+25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
-pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
+pid_d_up_button = Button(1002-300+25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Kd(0.01)) 
+pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Kd(-0.01)) 
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
@@ -982,10 +990,12 @@ def pygame_update_loop():
     MOUSE_Y = remap((display_h-scaled_drawing_surface_size[1])/2, (display_h-scaled_drawing_surface_size[1])/2+scaled_drawing_surface_size[1], 0, SCREEN_HEIGHT, mouse_beforetransform_y)
 
     update_manual_control_trim_buttons()
+    setflaps.update_button_states()
+    ap_button.force_state(input_commands['ap_on'])
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            GCS_EXIT_PROGRAM()
+            GCS_EXIT_PROGRAM([PID_values, coms_ports, input_commands, control_surfaces])
         elif event.type == pygame.VIDEORESIZE:
             pass
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -999,7 +1009,8 @@ def pygame_update_loop():
 
             # stuff related to the control cursor
             if within(MOUSE_X, mouse_control.cursor_ctrl_box_x, mouse_control.cursor_ctrl_box_x+mouse_control.cursor_ctrl_side_length) and within(MOUSE_Y, mouse_control.cursor_ctrl_box_y, mouse_control.cursor_ctrl_box_y+mouse_control.cursor_ctrl_side_length) :
-                mouse_control.attach()
+                if input_commands['gcs_in_control']:
+                    mouse_control.attach()
             elif within(MOUSE_X, stepper.handle_x_coord - 50, stepper.handle_x_coord + 50) and within(MOUSE_Y, stepper.handle_y_coord - 20, stepper.handle_y_coord + 20):
                 stepper.attach()
             elif within(MOUSE_X, stepper.region_min_x, stepper.region_max_x) and within(MOUSE_Y, stepper.region_min_y, stepper.region_max_y):
