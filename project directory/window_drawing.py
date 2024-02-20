@@ -50,6 +50,7 @@ textures = {
     'servo' : pygame.image.load(os.path.join(root_path, 'textures', 'servo.png')).convert_alpha(),
     'servo_arm' : pygame.image.load(os.path.join(root_path, 'textures', 'servo_arm.png')).convert_alpha(),
     'surface' : pygame.image.load(os.path.join(root_path, 'textures', 'surface.png')).convert_alpha(),
+    'underscore' : pygame.image.load(os.path.join(root_path, 'textures', 'underscore.png')).convert_alpha(),
 }
 
 pygame.display.set_icon(textures['icon'])
@@ -60,7 +61,7 @@ colours = {
     'grey'  : (255/2,255/2,255/2),
     'dark_grey'  : (255/4,255/4,255/4),
     'black' : (0  ,0  ,0  ),
-    'bgd'   : (1  ,17 ,21 ),
+    'bgd'   : (6/2  ,57/2 ,72/2 ),
     'pearl' : (247,255,228),
     'pearl_grey' : (247/2,255/2,228/2),
     'red'   : (255,102,95 ),
@@ -460,6 +461,10 @@ def draw_pid_coef_box():#
     draw_text_xcentered(PID_values['Kp'], fonts['dbxl_title'], colours['green'], 1002-500+70-25 + 35, 900-40)
     draw_text_xcentered(PID_values['Ki'], fonts['dbxl_title'], colours['green'], 1002-400+35 + 35, 900-40)
     draw_text_xcentered(PID_values['Kd'], fonts['dbxl_title'], colours['green'], 1002-300+25 + 35, 900-40)
+
+    draw_image_centered(textures['underscore'], 1002-500+70-25 + 35, 900-13)
+    draw_image_centered(textures['underscore'], 1002-400+35 + 35, 900-13)
+    draw_image_centered(textures['underscore'], 1002-300+25 + 35, 900-13)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
     draw_line((x, y+60), (x, y-60), 2, colours['pearl'])
