@@ -25,9 +25,9 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = True
-TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_ON_SIM = False
+TESTING_GRAPHICS_ONLY = True
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -193,7 +193,8 @@ if not TESTING_GRAPHICS_ONLY:
     print("Heartbeat from system (system %u component %u)" % (connection.target_system, connection.target_component))
     mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
                     mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, #vfr hud stands for typical hud data on a fixed wing plane
-                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA]
+                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA,
+                    mavutil.mavlink.MAVLINK_MSG_ID_SERVO_OUTPUT_RAW]
     request_refresh_rate(connection, mav_commands)
 
 window_drawing.draw_init_screen()
@@ -308,6 +309,17 @@ def fetch_messages_and_update():
     if vfr_hud is not None:
         vfr_hud = vfr_hud.to_dict()
         airplane_data['airspeed'] = vfr_hud['airspeed']
+
+    servo_pos_msg = connection.recv_match(type = 'SERVO_OUTPUT_RAW')
+    if servo_pos_msg is not None:
+        servo_pos_msg = servo_pos_msg.to_dict()
+        control_surfaces['elevator']['servo_actual_pwm'] = servo_pos_msg['servo5_raw']
+        control_surfaces['rudder']['servo_actual_pwm'] = servo_pos_msg['servo6_raw']
+        control_surfaces['port_aileron']['servo_actual_pwm'] = servo_pos_msg['servo1_raw']
+        control_surfaces['port_flap']['servo_actual_pwm'] = servo_pos_msg['servo2_raw']
+        control_surfaces['starboard_aileron']['servo_actual_pwm'] = servo_pos_msg['servo3_raw']
+        control_surfaces['starboard_flap']['servo_actual_pwm'] = servo_pos_msg['servo4_raw']
+
 
     # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
     #     sys_status=msg.to_dict()
