@@ -99,7 +99,7 @@ pico_status = {
 }
 
 #GCS Serial Reader Message Size in Bytes
-serial_reader_msg_size = 32
+serial_reader_msg_size = 50
 
 #file path to store data to
 file_path = 'Results.csv'
