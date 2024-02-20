@@ -30,7 +30,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -251,7 +251,7 @@ def flip_servo_modes_tmx_gcs():
     if TESTING_REAL_PLANE_CHANNELS:
         if prev_gcs_in_control != input_commands['gcs_in_control']:
             if input_commands['gcs_in_control']:
-                for i in range(1, 17):  # 16 Chanels
+                for i in range(1, 7):  # only 6 channels modified
                     param_name = f'SERVO{i}_FUNCTION'
                     set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
                 prev_gcs_in_control = input_commands['gcs_in_control']
@@ -328,8 +328,7 @@ prev_flap_angle = 0
 prev_aileron_angle = 0
 
 def flight_controller():
-    earth_pitch_rate = airplane_data['pitch_rate'] - airplane_data['yaw_rate'] * math.sin(airplane_data['roll'])
-    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = earth_pitch_rate)
+    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
     # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
     input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
     input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45

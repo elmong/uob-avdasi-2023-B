@@ -221,7 +221,7 @@ class manualMoveServo:
             case 5:
                 control_surfaces['elevator']['servo_demand'] = clamper(control_surfaces['elevator']['servo_demand'] +increment, -1, 1)
             case 6:
-                control_surfaces['port_aileron']['servo_demand'] = clamper(control_surfaces['port_aileron']['servo_demand'] +increment, -1, 1)
+                control_surfaces['rudder']['servo_demand'] = clamper(control_surfaces['rudder']['servo_demand'] +increment, -1, 1)
     def increase_button_callback(self):
         self.trim_servo(0.01)
     def decrease_button_callback(self):

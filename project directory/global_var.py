@@ -3,7 +3,6 @@
 airplane_data = {
     'pitch': 0,
     'pitch_rate': 0,
-    'pitch_rate_earth': 0,
     'roll': 0,
     'roll_rate': 0,
     'yaw': 0,
