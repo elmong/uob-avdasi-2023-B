@@ -634,7 +634,7 @@ class Stepper:
         self.handle_y_coord = (321+696)/2
         self.handle_height = 10
         self.handle_width = 62
-        self.displayed_pitch = 0
+        self.displayed_pitch = input_commands['fd_pitch']
         self.region_min_x = 760
         self.region_max_x = 853
         self.region_min_y = 321
@@ -672,6 +672,9 @@ class Stepper:
         buff = clamper(int(buff), -self.max_pitch, self.max_pitch)
         self.displayed_pitch = buff
         self.attach()
+    
+    def set_handle(self, pitch):
+        self.displayed_pitc = pitch
 
     def update(self):
         if time.time() - self.click_start_time > 0.5:
@@ -684,7 +687,6 @@ class Stepper:
         self.click_start_time = time.time()
 
 stepper = Stepper()
-
 
 def draw_menu():
     w, h = screen.get_size()

@@ -18,6 +18,9 @@ import GCS_serial_reader
 import pico_class
 from PID import *
 
+GCS_BEGIN_PROGRAM() ## DO NOT MOVE THIS ELSEWHERE!
+# Once global var is loaded, directly inject the saved json. Otherwise objects created in window drawing will have wrong initial values
+
 import window_drawing
 import live_plotter_class
 
@@ -27,7 +30,7 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -184,8 +187,6 @@ def mavlink_logging():
 
 ################################ THE INITIALISATION STUFF
 
-GCS_BEGIN_PROGRAM()
-
 if not TESTING_GRAPHICS_ONLY:
     window_drawing.draw_bad_screen()
     connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
@@ -327,8 +328,8 @@ prev_flap_angle = 0
 prev_aileron_angle = 0
 
 def flight_controller():
-
-    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
+    earth_pitch_rate = airplane_data['pitch_rate'] - airplane_data['yaw_rate'] * math.sin(airplane_data['roll'])
+    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = earth_pitch_rate)
     # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
     input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
     input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
