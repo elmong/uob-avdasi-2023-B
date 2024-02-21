@@ -261,38 +261,59 @@ def toggle_servo_manual_control():
         case 6:
             control_surfaces['rudder']['manual_control'] = not control_surfaces['rudder']['manual_control']
 
+def toggle_servo_feedback_mode():
+    match servo_display.page_number:
+        case 1:
+            control_surfaces['port_aileron']['feedback_mode'] = not control_surfaces['port_aileron']['feedback_mode']
+        case 2:
+            control_surfaces['port_flap']['feedback_mode'] = not control_surfaces['port_flap']['feedback_mode']
+        case 3:
+            control_surfaces['starboard_aileron']['feedback_mode'] = not control_surfaces['starboard_aileron']['feedback_mode']
+        case 4:
+            control_surfaces['starboard_flap']['feedback_mode'] = not control_surfaces['starboard_flap']['feedback_mode']
+        case 5:
+            control_surfaces['elevator']['feedback_mode'] = not control_surfaces['elevator']['feedback_mode']
+        case 6:
+            control_surfaces['rudder']['feedback_mode'] = not control_surfaces['rudder']['feedback_mode']
+
 def update_manual_control_trim_buttons():
     match servo_display.page_number:
         case 1:
-            increase_servo_button.suppress_drawing = not control_surfaces['port_aileron']['manual_control']
-            increase_servo_button.suppress_clicking = not control_surfaces['port_aileron']['manual_control']
-            decrease_servo_button.suppress_drawing = not control_surfaces['port_aileron']['manual_control']
-            decrease_servo_button.suppress_clicking = not control_surfaces['port_aileron']['manual_control']
+            buff = not control_surfaces['port_aileron']['manual_control']
+            increase_servo_button.suppress_drawing = buff
+            increase_servo_button.suppress_clicking = buff
+            decrease_servo_button.suppress_drawing = buff
+            decrease_servo_button.suppress_clicking = buff
         case 2:
-            increase_servo_button.suppress_drawing = not control_surfaces['port_flap']['manual_control']
-            increase_servo_button.suppress_clicking = not control_surfaces['port_flap']['manual_control']
-            decrease_servo_button.suppress_drawing = not control_surfaces['port_flap']['manual_control']
-            decrease_servo_button.suppress_clicking = not control_surfaces['port_flap']['manual_control']
+            buff = not control_surfaces['port_flap']['manual_control']
+            increase_servo_button.suppress_drawing = buff
+            increase_servo_button.suppress_clicking = buff
+            decrease_servo_button.suppress_drawing = buff
+            decrease_servo_button.suppress_clicking = buff
         case 3:
-            increase_servo_button.suppress_drawing = not control_surfaces['starboard_aileron']['manual_control']
-            increase_servo_button.suppress_clicking = not control_surfaces['starboard_aileron']['manual_control']
-            decrease_servo_button.suppress_drawing = not control_surfaces['starboard_aileron']['manual_control']
-            decrease_servo_button.suppress_clicking = not control_surfaces['starboard_aileron']['manual_control']
+            buff = not control_surfaces['starboard_aileron']['manual_control']
+            increase_servo_button.suppress_drawing = buff
+            increase_servo_button.suppress_clicking = buff
+            decrease_servo_button.suppress_drawing = buff
+            decrease_servo_button.suppress_clicking = buff
         case 4:
-            increase_servo_button.suppress_drawing = not control_surfaces['starboard_flap']['manual_control']
-            increase_servo_button.suppress_clicking = not control_surfaces['starboard_flap']['manual_control']
-            decrease_servo_button.suppress_drawing = not control_surfaces['starboard_flap']['manual_control']
-            decrease_servo_button.suppress_clicking = not control_surfaces['starboard_flap']['manual_control']
+            buff = not control_surfaces['starboard_flap']['manual_control']
+            increase_servo_button.suppress_drawing = buff
+            increase_servo_button.suppress_clicking = buff
+            decrease_servo_button.suppress_drawing = buff
+            decrease_servo_button.suppress_clicking = buff
         case 5:
-            increase_servo_button.suppress_drawing = not control_surfaces['elevator']['manual_control']
-            increase_servo_button.suppress_clicking = not control_surfaces['elevator']['manual_control']
-            decrease_servo_button.suppress_drawing = not control_surfaces['elevator']['manual_control']
-            decrease_servo_button.suppress_clicking = not control_surfaces['elevator']['manual_control']
+            buff = not control_surfaces['elevator']['manual_control']
+            increase_servo_button.suppress_drawing = buff
+            increase_servo_button.suppress_clicking = buff
+            decrease_servo_button.suppress_drawing = buff
+            decrease_servo_button.suppress_clicking = buff
         case 6:
-            increase_servo_button.suppress_drawing = not control_surfaces['rudder']['manual_control']
-            increase_servo_button.suppress_clicking = not control_surfaces['rudder']['manual_control']
-            decrease_servo_button.suppress_drawing = not control_surfaces['rudder']['manual_control']
-            decrease_servo_button.suppress_clicking = not control_surfaces['rudder']['manual_control']
+            buff = not control_surfaces['rudder']['manual_control']
+            increase_servo_button.suppress_drawing = buff
+            increase_servo_button.suppress_clicking = buff
+            decrease_servo_button.suppress_drawing = buff
+            decrease_servo_button.suppress_clicking = buff
 
 
 ############ The land of button creation
@@ -336,6 +357,8 @@ increase_servo_button = Button(1739-345-320, 216+220, 90, 29, colours['red'], fo
 decrease_servo_button = Button(1649-345-320, 216+220, 90, 29, colours['red'], fonts['helvetica_bold'], " << ", continuous_callback = manual_move_servo.decrease_button_callback, suppress_drawing = True, suppress_clicking = True) 
 
 servo_manual_conntrol_button = ToggleButton(1514, 288, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_manual_control, suppress_drawing = True) 
+
+servo_feedback_mode_button = ToggleButton(1514, 288 + 337 - 215, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_feedback_mode, suppress_drawing = True) 
 
 ############  I love OOP
 
@@ -661,8 +684,12 @@ class Stepper:
 
         handle_y_offset = -pch_cmd * (half_length/self.max_pitch)
         self.handle_y_coord = (321+696)/2 + handle_y_offset
-        pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.handle_height/2, self.handle_width, self.handle_height))
-        pygame.draw.rect(screen, colours['light_blue'], (self.handle_x_coord-self.handle_width/2-20+2, self.handle_y_coord-self.handle_height/2+2, self.handle_width-4, self.handle_height-4))
+        if input_commands['fd_pitch'] == pch_cmd:
+            pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.  handle_height/2, self.handle_width, self.handle_height))
+            pygame.draw.rect(screen, colours['light_blue'], (self.handle_x_coord-self.handle_width/2-20+2, self.handle_y_coord-self.    handle_height/2+2, self.handle_width-4, self.handle_height-4))
+        else:
+            pygame.draw.rect(screen, colours['red'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.  handle_height/2, self.handle_width, self.handle_height))
+            pygame.draw.rect(screen, colours['amber'], (self.handle_x_coord-self.handle_width/2-20+2, self.handle_y_coord-self.    handle_height/2+2, self.handle_width-4, self.handle_height-4))
 
         draw_text_ycentered(int(pch_cmd), fonts['dbxl'], colours['green'] if input_commands['fd_pitch'] == pch_cmd else colours['amber'], (760+853)/2+20, (321+696)/2)
 
@@ -805,6 +832,7 @@ def draw_servo_diagnostic():
     servo_demand = 0
     servo_ratio_actual = 0
     servo_in_manual = False
+    servo_in_feedback = False
     title = "CTRL "
 
     match servo_display.page_number:
@@ -814,6 +842,7 @@ def draw_servo_diagnostic():
             servo_demand = control_surfaces['port_aileron']['servo_demand']
             servo_ratio_actual = control_surfaces['port_aileron']['servo_actual']
             servo_in_manual = control_surfaces['port_aileron']['manual_control']
+            servo_in_feedback = control_surfaces['port_aileron']['feedback_mode']
             title += "- L AILERON"
         case 2:
             #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['port_flap']['angle']
@@ -821,6 +850,7 @@ def draw_servo_diagnostic():
             servo_demand = control_surfaces['port_flap']['servo_demand']
             servo_ratio_actual = control_surfaces['port_flap']['servo_actual']
             servo_in_manual = control_surfaces['port_flap']['manual_control']
+            servo_in_feedback = control_surfaces['port_flap']['feedback_mode']
             title += "- L FLAP"
         case 3:
             #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['starboard_aileron']['angle']
@@ -828,6 +858,7 @@ def draw_servo_diagnostic():
             servo_demand = control_surfaces['starboard_aileron']['servo_demand']
             servo_ratio_actual = control_surfaces['starboard_aileron']['servo_actual']
             servo_in_manual = control_surfaces['starboard_aileron']['manual_control']
+            servo_in_feedback = control_surfaces['starboard_aileron']['feedback_mode']
             title += "- R AILERON"
         case 4:
             #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['starboard_flap']['angle']
@@ -835,6 +866,7 @@ def draw_servo_diagnostic():
             servo_demand = control_surfaces['starboard_flap']['servo_demand']
             servo_ratio_actual = control_surfaces['starboard_flap']['servo_actual']
             servo_in_manual = control_surfaces['starboard_flap']['manual_control']
+            servo_in_feedback = control_surfaces['starboard_flap']['feedback_mode']
             title += "- R FLAP"
         case 5:
             #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']
@@ -842,6 +874,7 @@ def draw_servo_diagnostic():
             servo_demand = control_surfaces['elevator']['servo_demand']
             servo_ratio_actual = control_surfaces['elevator']['servo_actual']
             servo_in_manual = control_surfaces['elevator']['manual_control']
+            servo_in_feedback = control_surfaces['elevator']['feedback_mode']
             title += "- ELEVATOR"
         case 6:
             #surface_angle = angle_sensor_data_live['rudder']#control_surfaces['rudder']['angle']
@@ -849,6 +882,7 @@ def draw_servo_diagnostic():
             servo_demand = control_surfaces['rudder']['servo_demand']
             servo_ratio_actual = control_surfaces['rudder']['servo_actual']
             servo_in_manual = control_surfaces['rudder']['manual_control']
+            servo_in_feedback = control_surfaces['rudder']['feedback_mode']
             title += "- RUDDER"
     
     servo_demand = ratio_to_pwm(servo_demand) # TODO swap this with actual
@@ -877,7 +911,13 @@ def draw_servo_diagnostic():
     draw_text("// HALL SENSOR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
     # FIXME this should not be servo_ratio_actual
     draw_text(("+" if servo_ratio_actual >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
-    draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
+
+    if not servo_in_feedback:
+        draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
+    else:
+        pygame.draw.rect(screen, colours['green'], (1513 + 3,337+73+3,384-4,105-73-4))
+        draw_rectangle(1513, 337+73, 384, 105-73, colours['green'], 2)
+        draw_text_centered("FEEDBACK", fonts['dbxl_title'], colours['dark_blue'], 1702, 308+122)
 
     if not servo_in_manual:
         draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['green_blue'], 1070, 420)
