@@ -50,6 +50,7 @@ textures = {
     'servo' : pygame.image.load(os.path.join(root_path, 'textures', 'servo.png')).convert_alpha(),
     'servo_arm' : pygame.image.load(os.path.join(root_path, 'textures', 'servo_arm.png')).convert_alpha(),
     'surface' : pygame.image.load(os.path.join(root_path, 'textures', 'surface.png')).convert_alpha(),
+    'underscore' : pygame.image.load(os.path.join(root_path, 'textures', 'underscore.png')).convert_alpha(),
 }
 
 pygame.display.set_icon(textures['icon'])
@@ -60,7 +61,7 @@ colours = {
     'grey'  : (255/2,255/2,255/2),
     'dark_grey'  : (255/4,255/4,255/4),
     'black' : (0  ,0  ,0  ),
-    'bgd'   : (1  ,17 ,21 ),
+    'bgd'   : (6/2  ,57/2 ,72/2 ),
     'pearl' : (247,255,228),
     'pearl_grey' : (247/2,255/2,228/2),
     'red'   : (255,102,95 ),
@@ -221,7 +222,7 @@ class manualMoveServo:
             case 5:
                 control_surfaces['elevator']['servo_demand'] = clamper(control_surfaces['elevator']['servo_demand'] +increment, -1, 1)
             case 6:
-                control_surfaces['port_aileron']['servo_demand'] = clamper(control_surfaces['port_aileron']['servo_demand'] +increment, -1, 1)
+                control_surfaces['rudder']['servo_demand'] = clamper(control_surfaces['rudder']['servo_demand'] +increment, -1, 1)
     def increase_button_callback(self):
         self.trim_servo(0.01)
     def decrease_button_callback(self):
@@ -461,6 +462,10 @@ def draw_pid_coef_box():#
     draw_text_xcentered('{:.3f}'.format(PID_values['Ki']), fonts['dbxl_title'], colours['green'], 1002-400+35 + 35, 900-40)
     draw_text_xcentered('{:.3f}'.format(PID_values['Kd']), fonts['dbxl_title'], colours['green'], 1002-300+25 + 35, 900-40)
 
+    draw_image_centered(textures['underscore'], 1002-500+70-25 + 35, 900-13)
+    draw_image_centered(textures['underscore'], 1002-400+35 + 35, 900-13)
+    draw_image_centered(textures['underscore'], 1002-300+25 + 35, 900-13)
+
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
     draw_line((x, y+60), (x, y-60), 2, colours['pearl'])
     draw_line((x-10, y+60), (x+10, y+60), 2, colours['pearl'])
@@ -634,7 +639,7 @@ class Stepper:
         self.handle_y_coord = (321+696)/2
         self.handle_height = 10
         self.handle_width = 62
-        self.displayed_pitch = 0
+        self.displayed_pitch = input_commands['fd_pitch']
         self.region_min_x = 760
         self.region_max_x = 853
         self.region_min_y = 321
@@ -672,6 +677,9 @@ class Stepper:
         buff = clamper(int(buff), -self.max_pitch, self.max_pitch)
         self.displayed_pitch = buff
         self.attach()
+    
+    def set_handle(self, pitch):
+        self.displayed_pitc = pitch
 
     def update(self):
         if time.time() - self.click_start_time > 0.5:
@@ -684,7 +692,6 @@ class Stepper:
         self.click_start_time = time.time()
 
 stepper = Stepper()
-
 
 def draw_menu():
     w, h = screen.get_size()

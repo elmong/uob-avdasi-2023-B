@@ -18,6 +18,9 @@ import GCS_serial_reader
 import pico_class
 from PID import *
 
+GCS_BEGIN_PROGRAM() ## DO NOT MOVE THIS ELSEWHERE!
+# Once global var is loaded, directly inject the saved json. Otherwise objects created in window drawing will have wrong initial values
+
 import window_drawing
 import live_plotter_class
 
@@ -184,8 +187,6 @@ def mavlink_logging():
 
 ################################ THE INITIALISATION STUFF
 
-GCS_BEGIN_PROGRAM()
-
 if not TESTING_GRAPHICS_ONLY:
     window_drawing.draw_bad_screen()
     connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
@@ -251,7 +252,7 @@ def flip_servo_modes_tmx_gcs():
     if TESTING_REAL_PLANE_CHANNELS:
         if prev_gcs_in_control != input_commands['gcs_in_control']:
             if input_commands['gcs_in_control']:
-                for i in range(1, 17):  # 16 Chanels
+                for i in range(1, 7):  # only 6 channels modified
                     param_name = f'SERVO{i}_FUNCTION'
                     set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
                 prev_gcs_in_control = input_commands['gcs_in_control']
@@ -339,7 +340,6 @@ prev_flap_angle = 0
 prev_aileron_angle = 0
 
 def flight_controller():
-
     cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
     # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
     input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
