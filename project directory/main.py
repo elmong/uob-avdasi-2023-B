@@ -26,8 +26,8 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = True
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_GRAPHICS_ONLY = False
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -359,7 +359,7 @@ def flight_controller():
         if not control_surfaces['starboard_aileron']['manual_control']:
             control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
         if not control_surfaces['port_flap']['manual_control']:
-            control_surfaces['port_flap']['servo_demand'] = -flap_angle * 0.4
+            control_surfaces['port_flap']['servo_demand'] = -flap_angle
         if not control_surfaces['starboard_flap']['manual_control']:
             control_surfaces['starboard_flap']['servo_demand'] = flap_angle
         if not control_surfaces['elevator']['manual_control']:

@@ -233,15 +233,15 @@ class pidGainEdit:
         pass
     def modify_Kp(self, inc):
         PID_values['Kp'] += inc
-        PID_values['Kp'] = round(PID_values['Kp'], 2)
+        PID_values['Kp'] = round(PID_values['Kp'], 3)
         PID_values['Kp'] = max(PID_values['Kp'], 0)
     def modify_Ki(self, inc):
         PID_values['Ki'] += inc
-        PID_values['Ki'] = round(PID_values['Ki'], 2)
+        PID_values['Ki'] = round(PID_values['Ki'], 3)
         PID_values['Ki'] = max(PID_values['Ki'], 0)
     def modify_Kd(self, inc):
         PID_values['Kd'] += inc
-        PID_values['Kd'] = round(PID_values['Kd'], 2)
+        PID_values['Kd'] = round(PID_values['Kd'], 3)
         PID_values['Kd'] = max(PID_values['Kd'], 0)
 pid_gain_edit = pidGainEdit()
 
@@ -319,14 +319,14 @@ page_back_button_pico = Button(1002+90, 826, 45, 29, colours['pearl'], fonts['he
 pico_up_button = Button(1002+80, 900, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", callback = pico_display.increase_com) 
 pico_dn_button = Button(1002+80, 900+29, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", callback = pico_display.decrease_com) 
 
-pid_p_up_button = Button(1002-500+70-25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Kp(0.01)) 
-pid_p_dn_button = Button(1002-500+70-25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Kp(-0.01)) 
+pid_p_up_button = Button(1002-500+70-25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Kp(0.005)) 
+pid_p_dn_button = Button(1002-500+70-25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Kp(-0.005)) 
 
-pid_i_up_button = Button(1002-400+35 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Ki(0.01)) 
-pid_i_dn_button = Button(1002-400+35 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Ki(-0.01)) 
+pid_i_up_button = Button(1002-400+35 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Ki(0.005)) 
+pid_i_dn_button = Button(1002-400+35 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Ki(-0.005)) 
 
-pid_d_up_button = Button(1002-300+25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Kd(0.01)) 
-pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Kd(-0.01)) 
+pid_d_up_button = Button(1002-300+25 + 4, 900+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "up", continuous_callback = lambda: pid_gain_edit.modify_Kd(0.005)) 
+pid_d_dn_button = Button(1002-300+25 + 4, 900+29+20, 60, 29, colours['pearl'], fonts['dbxl_title'], "dn", continuous_callback = lambda: pid_gain_edit.modify_Kd(-0.005)) 
 
 page_fwd_button_servo = Button(1739-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = servo_display.increase) 
 page_back_button_servo = Button(1649-345, 216, 90, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = servo_display.decrease) 
@@ -456,10 +456,10 @@ def draw_pico_coms():
 
 def draw_pid_coef_box():#
     draw_rectangle(510, 825, 1182-510-340, 1000-825, colours['light_blue'], 2)
-
-    draw_text_xcentered(PID_values['Kp'], fonts['dbxl_title'], colours['green'], 1002-500+70-25 + 35, 900-40)
-    draw_text_xcentered(PID_values['Ki'], fonts['dbxl_title'], colours['green'], 1002-400+35 + 35, 900-40)
-    draw_text_xcentered(PID_values['Kd'], fonts['dbxl_title'], colours['green'], 1002-300+25 + 35, 900-40)
+    
+    draw_text_xcentered('{:.3f}'.format(PID_values['Kp']), fonts['dbxl_title'], colours['green'], 1002-500+70-25 + 35, 900-40)
+    draw_text_xcentered('{:.3f}'.format(PID_values['Ki']), fonts['dbxl_title'], colours['green'], 1002-400+35 + 35, 900-40)
+    draw_text_xcentered('{:.3f}'.format(PID_values['Kd']), fonts['dbxl_title'], colours['green'], 1002-300+25 + 35, 900-40)
 
 def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow ratio 0-1, value is the typed number, will be auto formatted
     draw_line((x, y+60), (x, y-60), 2, colours['pearl'])
