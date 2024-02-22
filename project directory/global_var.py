@@ -82,6 +82,7 @@ ui_commands = {
     'logging' : False,
     'force_refresh': 0, # This is to force the refresh rate back to speed after a current kill
     'pico_refresh_com' : 0,
+    'csv_plot': 0,
 }
 
 #Ports/connection addresses used

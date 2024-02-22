@@ -8,6 +8,7 @@ import time
 import math
 import csv
 import os
+import sys
 import serial
 import threading
 
@@ -26,11 +27,13 @@ import live_plotter_class
 
 root_path = os.path.abspath(os.path.dirname(__file__))
 
+import csv_plotflightdata
+
 ################################
 
 TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -430,6 +433,13 @@ async def pico_loop(): #where all of the pico's events are handled
         airplane_data['pico_refresh_rate'] = pico_loop_rate_filter.get_value()
         await asyncio.sleep(0)
 
+async def instant_plot_loop():
+    while True:
+        if ui_commands['csv_plot'] == 1:
+            csv_plotflightdata.plot_the_csv_output()
+            ui_commands['csv_plot'] = 0
+        await asyncio.sleep(0)
+
 def live_data_plot_ini():
     control_surface_plot.ini()
     
@@ -443,12 +453,14 @@ async def async_loop():
     task1 = asyncio.create_task(mavlink_loop())
     task2 = asyncio.create_task(pygame_loop())
     task3 = asyncio.create_task(pico_loop())
-    await asyncio.gather(task1, task2, task3)
+    task4 = asyncio.create_task(instant_plot_loop())
+    await asyncio.gather(task1, task2, task3, task4)
 
 #tasks set to run only when graphics only is true
 async def graphics_only_async_loop():
     task3 = asyncio.create_task(pygame_loop())
-    await asyncio.gather(task3)
+    task4 = asyncio.create_task(instant_plot_loop())
+    await asyncio.gather(task3, task4)
 
 def worker():
     #creating a thread for live data plotter server (because it's a blocking function that is already running an asyncio loop)

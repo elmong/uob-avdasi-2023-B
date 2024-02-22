@@ -321,7 +321,7 @@ quit_button = Button(1704, 0, 122, 64, colours['red'], fonts['dbxl_title'], "QUI
 pid_tuning_button = Button(865, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PID TUNING")
 arm_button = Button(865 - 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "ARM ACFT")
 button_1 = Button(865 - 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "FORCE RFSH", callback = lambda: ui_commands.update(force_refresh=1))
-button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP")
+button_4 = Button(865 + 208 * 1, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "GRAPH DSP", callback = lambda: ui_commands.update(csv_plot=1))
 pico_com_refresh_button = Button(865 + 208 * 2, 0, 1920-865*2, 64, colours['pearl'], fonts['dbxl_title'], "PICO RFSH", callback = lambda: ui_commands.update(pico_refresh_com=1))
 gcs_in_control_button = ToggleButton(100, 835, 120, 68, colours['pearl'], fonts['dbxl_title'], "GCS", "CTRL", callback = lambda: input_commands.update(gcs_in_control=not input_commands['gcs_in_control'])) # This code is so dirty I hate it
 gcs_in_control_button.force_state(input_commands['gcs_in_control'])
