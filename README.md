@@ -1,4 +1,4 @@
-# COMPANY A STOP LOOKING AT OUR CODE
+#I TOLD YOU NOT TO LOOK!
 
 project directory/ is where most of the thing happens
 
