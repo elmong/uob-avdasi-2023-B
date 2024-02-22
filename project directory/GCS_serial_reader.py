@@ -20,14 +20,14 @@ STARBOARD_FLAP = control_surface_map_class.Control_Surface("starboard_flap",[[],
 def full_pwm_adc_to_angle():
     #comment out if not using linear interpolation
     
-    #control_surfaces['elevator']['angle'] = ELEVATOR.pwm_adc_to_angle(control_surfaces['elevator']['servo_actual_pwm'], ELEVATOR.adc_now)
-    #control_surfaces['rudder']['angle'] = RUDDER.pwm_adc_to_angle(control_surfaces['rudder']['servo_actual_pwm'], RUDDER.adc_now)
+    control_surfaces['elevator']['angle'] = ELEVATOR.pwm_adc_to_angle(control_surfaces['elevator']['servo_actual'], ELEVATOR.adc_now)
+    control_surfaces['rudder']['angle'] = RUDDER.pwm_adc_to_angle(control_surfaces['rudder']['servo_actual'], RUDDER.adc_now)
 
-    #control_surfaces['port_aileron']['angle']= PORT_AILERON.pwm_adc_to_angle(control_surfaces['port_aileron']['servo_actual_pwm'], PORT_AILERON.adc_now)
-    #control_surfaces['port_flap']['angle'] = PORT_FLAP.pwm_adc_to_angle(control_surfaces['port_flap']['servo_actual_pwm'], PORT_FLAP.adc_now)
+    control_surfaces['port_aileron']['angle']= PORT_AILERON.pwm_adc_to_angle(control_surfaces['port_aileron']['servo_actual'], PORT_AILERON.adc_now)
+    control_surfaces['port_flap']['angle'] = PORT_FLAP.pwm_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
 
-    #control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.pwm_adc_to_angle(control_surfaces['starboard_aileron']['servo_actual_pwm'], STARBOARD_AILERON.adc_now)
-    #control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.pwm_adc_to_angle(control_surfaces['starboard_flap']['servo_actual_pwm'], STARBOARD_FLAP.adc_now)
+    control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.pwm_adc_to_angle(control_surfaces['starboard_aileron']['servo_actual'], STARBOARD_AILERON.adc_now)
+    control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.pwm_adc_to_angle(control_surfaces['starboard_flap']['servo_actual'], STARBOARD_FLAP.adc_now)
     pass
 
 #decoding function: want to convert messages received from pico to data

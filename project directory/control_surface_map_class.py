@@ -3,10 +3,10 @@ from global_var import *
 class Control_Surface:
     
     #object instantiation
-    def __init__(self,Name,Pwm_adc_angle_table):
+    def __init__(self,Name,Rate_adc_angle_table):
         #assign object attributes
-        self.table = Pwm_adc_angle_table 
-        #[0] is PWM values, [1] is ADC reading, [2] is output angle, pwm_adc_angle_table is a list with three entries, [PWM,ADC,Angle]
+        self.table = Rate_adc_angle_table 
+        #[0] is Rate values, [1] is ADC reading, [2] is output angle, Rate_adc_angle_table is a list with three entries, [Rate,ADC,Angle]
         self.name = Name
         self.adc_now = None
         
@@ -28,16 +28,18 @@ class Control_Surface:
         #checks out
 
 
-    #for a given adc value, find the closest pwm value to the current pwm output
-    def pwm_adc_to_angle(self,pwm_now,adc_now):
-        
-        #obtain pwms that are closest to adc
+    #for a given adc value, find the closest rate value to the current rate output
+    def rate_adc_to_angle(self,rate_now,adc_now):
+        #rate is a range of values which map to the pwm and the angle that the servo is allowed to use, rate goes from -1 to +1
+
+        #obtain rates that are closest to adc
         adc_indexes = [[],[]] #store high and low index [[high],[low]]
-        possible_pwms = []#stores all possible pwms from given adc obtained
+        possible_rates = []#stores all possible rates from given adc obtained
 
         if self.table[1].index(adc_now) != None: #assuming individual adc values do not exactly repeat
         #if somehow adc lands on a stored value, return angle directly by index
-            pwm = self.table[0][self.table[1].index(adc_now)]
+            rate = self.table[0][self.table[1].index(adc_now)]
+            return self.table[2][self.table[0].index(rate)]
 
         else:
             #find all adc values' indexes in table close to adc_now
@@ -74,7 +76,7 @@ class Control_Surface:
 
             i = 0 #keeping track of the index of the next for loop
             for index in adc_indexes[0]:
-                #set up values for linear interpolation, to find potential pwms
+                #set up values for linear interpolation, to find potential rates
                 #x is adc
                 #y is pwm
                 x = adc_now
@@ -83,38 +85,38 @@ class Control_Surface:
                 y2 = self.table[0][index]
                 y1 = self.table[0][adc_indexes[1][i]]   
 
-                #calculate and store possible pwms
-                possible_pwms.append(self.linear_interpolation(x,x1,x2,y1,y2))
+                #calculate and store possible rates
+                possible_rates.append(self.linear_interpolation(x,x1,x2,y1,y2))
                 
                 i +=1
 
             #find closest pwm
-            closest_pwm = self.find_closest_value(possible_pwms,pwm_now)
-            opposite_pwm = None
+            closest_rate = self.find_closest_value(possible_rates,rate_now)
+            opposite_rate = None
             angle1 = None
             angle2 = None
-            #find other pwm value so closest and found pwm enclose pwm now
-            if closest_pwm > pwm_now:
-                for pwm in self.table[0]:
-                    if pwm > pwm_now:
-                        opposite_pwm = self.table[0][self.table[0].index(pwm) - 1] #get value just before
+            #find other rate value so closest and found rate enclose rate now
+            if closest_rate > rate_now:
+                for rate in self.table[0]:
+                    if rate > rate_now:
+                        opposite_rate = self.table[0][self.table[0].index(rate) - 1] #get value just before
 
-                        #find corresponding angles for these pwms
-                        angle1 = self.table[2][self.table[0].index(opposite_pwm)]
-                        angle2 = self.table[2][self.table[0].index(pwm)]
+                        #find corresponding angles for these rates
+                        angle1 = self.table[2][self.table[0].index(opposite_rate)]
+                        angle2 = self.table[2][self.table[0].index(rate)]
                         break
             else:
-                for pwm in self.table[0]:
-                    if pwm > pwm_now:
-                        opposite_pwm = self.table[0][self.table[0].index(pwm)] #get value now
+                for rate in self.table[0]:
+                    if rate > rate_now:
+                        opposite_rate = self.table[0][self.table[0].index(rate)] #get value now
 
-                        #find corresponding angles for these pwms
-                        angle2 = self.table[2][self.table[0].index(opposite_pwm)]
-                        angle1 = self.table[2][self.table[0].index(pwm)]
+                        #find corresponding angles for these rates
+                        angle2 = self.table[2][self.table[0].index(opposite_rate)]
+                        angle1 = self.table[2][self.table[0].index(rate)]
                         break
             
-            #interpolate angle from converted pwm
-            interpolated_angle = self.linear_interpolation(pwm_now,closest_pwm,opposite_pwm,angle1,angle2)
+            #interpolate angle from converted rate
+            interpolated_angle = self.linear_interpolation(rate_now,closest_rate,opposite_rate,angle1,angle2)
             return interpolated_angle
             
             

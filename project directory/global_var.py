@@ -1,4 +1,5 @@
 # GLOBAL VARIABLES OPEN TO ACCESS
+from math_helpers import Interpolator
 
 airplane_data = {
     'pitch': 0,
@@ -33,6 +34,7 @@ control_surfaces = {
         "servo_actual_pwm":0, # stores pwm given by cube
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "port_flap": {
         "servo_demand": 0,
@@ -40,6 +42,7 @@ control_surfaces = {
         "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "starboard_aileron": {
         "servo_demand": 0,
@@ -47,6 +50,7 @@ control_surfaces = {
         "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "starboard_flap": {
         "servo_demand": 0,
@@ -54,6 +58,7 @@ control_surfaces = {
         "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "elevator": {
         "servo_demand": 0,
@@ -61,6 +66,7 @@ control_surfaces = {
         "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "rudder": {
         "servo_demand": 0,
@@ -68,6 +74,7 @@ control_surfaces = {
         "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     }
 }
 
@@ -111,3 +118,29 @@ PID_values = {
     'setpoint' : 0,
     'output_limits' : [-45,45]
 }
+
+
+interpolator_port_aileron = Interpolator([
+    (-1, -1), 
+    (0, 0), 
+    (1, 1)])
+interpolator_port_flap = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_starboard_aileron = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_starboard_flap = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_elevator = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_rudder = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])

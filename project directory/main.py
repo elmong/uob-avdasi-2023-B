@@ -28,9 +28,9 @@ root_path = os.path.abspath(os.path.dirname(__file__))
 
 ################################
 
-TESTING_ON_SIM = False
+TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
@@ -339,6 +339,15 @@ aileron_damper = SmoothDamp()
 prev_flap_angle = 0
 prev_aileron_angle = 0
 
+def elevator_feedback():
+    error = 0
+    gain = 0.05
+    if control_surfaces['elevator']['feedback_mode']:
+        ideal_deflection = input_commands['elevator']  * 45
+        actual_deflection = control_surfaces['elevator']['angle']
+        error = (ideal_deflection - actual_deflection) * gain
+    return error
+
 def flight_controller():
     cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
     # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
@@ -355,20 +364,26 @@ def flight_controller():
         prev_flap_angle = flap_angle
 
         if not control_surfaces['port_aileron']['manual_control']:
-            control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
+            control_surfaces['port_aileron']['servo_demand'] = interpolator_port_aileron.value(input_commands['aileron'])
         if not control_surfaces['starboard_aileron']['manual_control']:
-            control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
+            control_surfaces['starboard_aileron']['servo_demand'] = interpolator_starboard_aileron.value(input_commands['aileron'])
         if not control_surfaces['port_flap']['manual_control']:
-            control_surfaces['port_flap']['servo_demand'] = -flap_angle
+            control_surfaces['port_flap']['servo_demand'] = interpolator_port_flap.value(flap_angle)
         if not control_surfaces['starboard_flap']['manual_control']:
-            control_surfaces['starboard_flap']['servo_demand'] = flap_angle
+            control_surfaces['starboard_flap']['servo_demand'] = interpolator_starboard_flap.value(flap_angle)
         if not control_surfaces['elevator']['manual_control']:
+            foo = 0
             if not input_commands['ap_on']:
-                control_surfaces['elevator']['servo_demand'] = -input_commands['elevator'] 
+                foo = clamper(input_commands['elevator'], -1, 1)
             else:
-                control_surfaces['elevator']['servo_demand'] = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting servo
+                input_commands['elevator'] = input_commands['pitch_pid']
+                foo = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting 
+
+            foo = clamper(foo  + elevator_feedback(), -1, 1)
+            control_surfaces['elevator']['servo_demand'] = interpolator_elevator.value(foo)
+
         if not control_surfaces['rudder']['manual_control']:
-            control_surfaces['rudder']['servo_demand'] = 0
+            control_surfaces['rudder']['servo_demand'] = interpolator_rudder.value(0)
 
         ################################################## Boilerplate
 
