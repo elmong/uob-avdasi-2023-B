@@ -7,8 +7,9 @@ from global_var import control_surfaces , serial_reader_msg_size , file_path
 import serial
 import control_surface_map_class
 
-#declare control surface maps, for mapping pwm and adc to angle
-ELEVATOR = control_surface_map_class.Control_Surface("elevator",[[],[],[]])
+#declare control surface maps, for mapping rate and adc to angle
+ELEVATOR_HALL_EFFECT = control_surface_map_class.Control_Surface("elevator_hall_effect",[[],[],[]])
+ELEVATOR_POTENTIOMETER = control_surface_map_class.Control_Surface("elevator_hall_effect",[[],[],[]])
 RUDDER = control_surface_map_class.Control_Surface("rudder",[[],[],[]])
 PORT_AILERON = control_surface_map_class.Control_Surface("port_aileron",[[],[],[]])
 PORT_FLAP = control_surface_map_class.Control_Surface("port_flap",[[],[],[]])
@@ -20,14 +21,18 @@ STARBOARD_FLAP = control_surface_map_class.Control_Surface("starboard_flap",[[],
 def full_pwm_adc_to_angle():
     #comment out if not using linear interpolation
     
-    control_surfaces['elevator']['angle'] = ELEVATOR.pwm_adc_to_angle(control_surfaces['elevator']['servo_actual'], ELEVATOR.adc_now)
-    control_surfaces['rudder']['angle'] = RUDDER.pwm_adc_to_angle(control_surfaces['rudder']['servo_actual'], RUDDER.adc_now)
+    #use either hall effect sensor or potentiometer for now
+    control_surfaces['elevator']['angle'] = ELEVATOR_HALL_EFFECT.rate_adc_to_angle(control_surfaces['elevator']['servo_actual'], ELEVATOR_HALL_EFFECT.adc_now)
+    #control_surfaces['elevator']['angle'] = ELEVATOR_POTENTIOMETER.rate_adc_to_angle(control_surfaces['elevator']['servo_actual'], ELEVATOR_POTENTIOMETER.adc_now)
 
-    control_surfaces['port_aileron']['angle']= PORT_AILERON.pwm_adc_to_angle(control_surfaces['port_aileron']['servo_actual'], PORT_AILERON.adc_now)
-    control_surfaces['port_flap']['angle'] = PORT_FLAP.pwm_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
 
-    control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.pwm_adc_to_angle(control_surfaces['starboard_aileron']['servo_actual'], STARBOARD_AILERON.adc_now)
-    control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.pwm_adc_to_angle(control_surfaces['starboard_flap']['servo_actual'], STARBOARD_FLAP.adc_now)
+    #control_surfaces['rudder']['angle'] = RUDDER.rate_adc_to_angle(control_surfaces['rudder']['servo_actual'], RUDDER.adc_now)
+
+    #control_surfaces['port_aileron']['angle']= PORT_AILERON.rate_adc_to_angle(control_surfaces['port_aileron']['servo_actual'], PORT_AILERON.adc_now)
+    #control_surfaces['port_flap']['angle'] = PORT_FLAP.rate_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
+
+    #control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.rate_adc_to_angle(control_surfaces['starboard_aileron']['servo_actual'], STARBOARD_AILERON.adc_now)
+    #control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.rate_adc_to_angle(control_surfaces['starboard_flap']['servo_actual'], STARBOARD_FLAP.adc_now)
     pass
 
 #decoding function: want to convert messages received from pico to data
@@ -45,9 +50,12 @@ def Unpacker(msg):
     
     #[1] is the time from start, 
     
-    #[2] is the Angle of ADC1,
+    #[2] is the Angle of ADC1 (or ADC value),
 
-    #[3] is the Angle of ADC2
+    #[3] is the Angle of ADC2 (or ADC value),
+
+    #[4] is the Angle of ADC3 (or ADC value)
+
     #_______________________________________________________#
 
     #split message into components    
@@ -66,11 +74,12 @@ def Unpacker(msg):
     match msgArray[0]: 
         case '0':
             #either comment out control surfaces or ___.adc_now, depending on the mode of operation
-            control_surfaces['elevator']['angle'] = float(msgArray[2])
-            control_surfaces['rudder']['angle'] = float(msgArray[3])
+            #control_surfaces['elevator']['angle'] = float(msgArray[2])
+            #control_surfaces['rudder']['angle'] = float(msgArray[3])
 
-            #ELEVATOR.adc_now = float(msgArray[2])
-            #RUDDER.adc_now = float(msgArray[3])
+            ELEVATOR_HALL_EFFECT.adc_now = float(msgArray[2])
+            RUDDER.adc_now = float(msgArray[3])
+            ELEVATOR_HALL_EFFECT.adc_now = float(msgArray[4])
         case '1':
             control_surfaces['port_aileron']['angle'] = float(msgArray[2])
             control_surfaces['port_flap']['angle'] = float(msgArray[3])
