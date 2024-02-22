@@ -122,26 +122,26 @@ PID_values = {
 
 
 interpolator_port_aileron = Interpolator([
-    (-1, -1), 
-    (0, 0), 
-    (1, 1)])
+    (-1, -0.3), 
+    (0, -0.0), 
+    (1, 0.3)])
 interpolator_port_flap = Interpolator(
-    [(-1, -1), 
-     (0, 0), 
-     (1, 1)])
+    [(-1, 0.00), 
+     (0, 0.15), 
+     (1, 0.29)])
 interpolator_starboard_aileron = Interpolator(
     [(-1, -1), 
-     (0, 0), 
-     (1, 1)])
+     (0, -0.67), 
+     (1, -0.28)])
 interpolator_starboard_flap = Interpolator(
     [(-1, -1), 
-     (0, 0), 
-     (1, 1)])
+     (0, -0.74), 
+     (1, -0.29)])
 interpolator_elevator = Interpolator(
     [(-1, -1), 
      (0, 0), 
      (1, 1)])
 interpolator_rudder = Interpolator(
-    [(-1, -1), 
+    [(-1, -0.7), 
      (0, 0), 
-     (1, 1)])
+     (1, 0.63)])

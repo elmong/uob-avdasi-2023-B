@@ -31,7 +31,7 @@ import csv_plotflightdata
 
 ################################
 
-TESTING_ON_SIM = True
+TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
@@ -39,6 +39,7 @@ port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz
 DELTA_TIME = 0.01
 SERVO_RATE_LIMIT = 5
+
 SUICIDE = False
 
 ################################
@@ -363,7 +364,7 @@ def flight_controller():
 
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
-        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, flight_controller_timer.DELTA_TIME)
+        flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 0.1, 5, flight_controller_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
         if not control_surfaces['port_aileron']['manual_control']:
@@ -386,7 +387,7 @@ def flight_controller():
             control_surfaces['elevator']['servo_demand'] = interpolator_elevator.value(foo)
 
         if not control_surfaces['rudder']['manual_control']:
-            control_surfaces['rudder']['servo_demand'] = interpolator_rudder.value(0)
+            control_surfaces['rudder']['servo_demand'] = interpolator_rudder.value(input_commands['aileron'])
 
         ################################################## Boilerplate
 
