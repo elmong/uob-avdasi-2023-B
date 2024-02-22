@@ -1,4 +1,5 @@
 # GLOBAL VARIABLES OPEN TO ACCESS
+from math_helpers import Interpolator
 
 airplane_data = {
     'pitch': 0,
@@ -30,38 +31,50 @@ control_surfaces = {
     "port_aileron": {
         "servo_demand": 0,
         "servo_actual": 0, # rate limited
+        "servo_actual_pwm":0, # stores pwm given by cube
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "port_flap": {
         "servo_demand": 0,
         "servo_actual": 0,
+        "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "starboard_aileron": {
         "servo_demand": 0,
         "servo_actual": 0,
+        "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "starboard_flap": {
         "servo_demand": 0,
         "servo_actual": 0,
+        "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "elevator": {
         "servo_demand": 0,
         "servo_actual": 0,
+        "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     },
     "rudder": {
         "servo_demand": 0,
         "servo_actual": 0,
+        "servo_actual_pwm":0,
         "angle": 0,
         "manual_control": False,
+        "feedback_mode": False,
     }
 }
 
@@ -69,6 +82,7 @@ ui_commands = {
     'logging' : False,
     'force_refresh': 0, # This is to force the refresh rate back to speed after a current kill
     'pico_refresh_com' : 0,
+    'csv_plot': 0,
 }
 
 #Ports/connection addresses used
@@ -93,7 +107,7 @@ pico_status = {
 }
 
 #GCS Serial Reader Message Size in Bytes
-serial_reader_msg_size = 32
+serial_reader_msg_size = 50
 
 #file path to store data to
 file_path = 'Results.csv'
@@ -103,5 +117,31 @@ PID_values = {
     'Ki' : 0,
     'Kd' : 1,
     'setpoint' : 0,
-    'output_limits' : (-45,45)
+    'output_limits' : [-45,45]
 }
+
+
+interpolator_port_aileron = Interpolator([
+    (-1, -1), 
+    (0, 0), 
+    (1, 1)])
+interpolator_port_flap = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_starboard_aileron = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_starboard_flap = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_elevator = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])
+interpolator_rudder = Interpolator(
+    [(-1, -1), 
+     (0, 0), 
+     (1, 1)])

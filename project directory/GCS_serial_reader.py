@@ -5,15 +5,30 @@
 from asyncio.windows_events import NULL
 from global_var import control_surfaces , serial_reader_msg_size , file_path
 import serial
+import control_surface_map_class
+
+#declare control surface maps, for mapping pwm and adc to angle
+ELEVATOR = control_surface_map_class.Control_Surface("elevator",[[],[],[]])
+RUDDER = control_surface_map_class.Control_Surface("rudder",[[],[],[]])
+PORT_AILERON = control_surface_map_class.Control_Surface("port_aileron",[[],[],[]])
+PORT_FLAP = control_surface_map_class.Control_Surface("port_flap",[[],[],[]])
+STARBOARD_AILERON = control_surface_map_class.Control_Surface("starboard_aileron",[[],[],[]])
+STARBOARD_FLAP = control_surface_map_class.Control_Surface("starboard_flap",[[],[],[]])
 
 #---Functions---#
 
-#initialise file
-def init_file():
-    FileName = file_path
+def full_pwm_adc_to_angle():
+    #comment out if not using linear interpolation
+    
+    control_surfaces['elevator']['angle'] = ELEVATOR.pwm_adc_to_angle(control_surfaces['elevator']['servo_actual'], ELEVATOR.adc_now)
+    control_surfaces['rudder']['angle'] = RUDDER.pwm_adc_to_angle(control_surfaces['rudder']['servo_actual'], RUDDER.adc_now)
 
-    file = open(FileName, 'w')
-    file.close()
+    control_surfaces['port_aileron']['angle']= PORT_AILERON.pwm_adc_to_angle(control_surfaces['port_aileron']['servo_actual'], PORT_AILERON.adc_now)
+    control_surfaces['port_flap']['angle'] = PORT_FLAP.pwm_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
+
+    control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.pwm_adc_to_angle(control_surfaces['starboard_aileron']['servo_actual'], STARBOARD_AILERON.adc_now)
+    control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.pwm_adc_to_angle(control_surfaces['starboard_flap']['servo_actual'], STARBOARD_FLAP.adc_now)
+    pass
 
 #decoding function: want to convert messages received from pico to data
 def Unpacker(msg):
@@ -50,14 +65,24 @@ def Unpacker(msg):
     #update values in global variables
     match msgArray[0]: 
         case '0':
+            #either comment out control surfaces or ___.adc_now, depending on the mode of operation
             control_surfaces['elevator']['angle'] = float(msgArray[2])
             control_surfaces['rudder']['angle'] = float(msgArray[3])
+
+            #ELEVATOR.adc_now = float(msgArray[2])
+            #RUDDER.adc_now = float(msgArray[3])
         case '1':
             control_surfaces['port_aileron']['angle'] = float(msgArray[2])
             control_surfaces['port_flap']['angle'] = float(msgArray[3])
+            
+            #PORT_AILERON.adc_now = float(msgArray[2])
+            #PORT_FLAP.adc_now = float(msgArray[3])
         case '2':
             control_surfaces['starboard_aileron']['angle'] = float(msgArray[2])
             control_surfaces['starboard_flap']['angle'] = float(msgArray[3])
+
+            #STARBOARD_AILERON.adc_now = float(msgArray[2])
+            #STARBOARD_FLAP.adc_now = float(msgArray[3])
         case '3':
             control_surfaces['elevator']['servo_pos'] = float(msgArray[2])
             control_surfaces['rudder']['servo_pos'] = float(msgArray[3])
@@ -68,6 +93,7 @@ def Unpacker(msg):
             control_surfaces['starboard_aileron']['servo_pos'] = float(msgArray[2])
             control_surfaces['starboard_flap']['servo_pos'] = float(msgArray[3])
 
+    full_pwm_adc_to_angle()
     return msgArray
     
 

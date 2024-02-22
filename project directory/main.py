@@ -8,6 +8,7 @@ import time
 import math
 import csv
 import os
+import sys
 import serial
 import threading
 
@@ -18,10 +19,15 @@ import GCS_serial_reader
 import pico_class
 from PID import *
 
+GCS_BEGIN_PROGRAM() ## DO NOT MOVE THIS ELSEWHERE!
+# Once global var is loaded, directly inject the saved json. Otherwise objects created in window drawing will have wrong initial values
+
 import window_drawing
 import live_plotter_class
 
 root_path = os.path.abspath(os.path.dirname(__file__))
+
+import csv_plotflightdata
 
 ################################
 
@@ -184,8 +190,6 @@ def mavlink_logging():
 
 ################################ THE INITIALISATION STUFF
 
-GCS_BEGIN_PROGRAM()
-
 if not TESTING_GRAPHICS_ONLY:
     window_drawing.draw_bad_screen()
     connection = mavutil.mavlink_connection(port) #connect to local simulator, change to com'number' 
@@ -193,7 +197,8 @@ if not TESTING_GRAPHICS_ONLY:
     print("Heartbeat from system (system %u component %u)" % (connection.target_system, connection.target_component))
     mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
                     mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, #vfr hud stands for typical hud data on a fixed wing plane
-                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA]
+                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA,
+                    mavutil.mavlink.MAVLINK_MSG_ID_SERVO_OUTPUT_RAW]
     request_refresh_rate(connection, mav_commands)
 
 window_drawing.draw_init_screen()
@@ -250,17 +255,17 @@ def flip_servo_modes_tmx_gcs():
     if TESTING_REAL_PLANE_CHANNELS:
         if prev_gcs_in_control != input_commands['gcs_in_control']:
             if input_commands['gcs_in_control']:
-                for i in range(1, 17):  # 16 Chanels
+                for i in range(1, 7):  # only 6 channels modified
                     param_name = f'SERVO{i}_FUNCTION'
                     set_param(connection, param_name, 0, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
                 prev_gcs_in_control = input_commands['gcs_in_control']
-                print('GCS TAKEOVER')
+                print('***********GCS TAKEOVER***********')
             else:
                 for i in range(1, 7):  # 6 Chanels
                     param_name = f'SERVO{i}_FUNCTION'
                     set_param(connection, param_name, 1, mavutil.mavlink.MAV_PARAM_TYPE_INT32)
                 prev_gcs_in_control = input_commands['gcs_in_control']
-                print('TMX TAKEOVER')
+                print('***********TMX TAKEOVER***********')
 
 def fetch_messages_and_update():
 
@@ -309,16 +314,27 @@ def fetch_messages_and_update():
         vfr_hud = vfr_hud.to_dict()
         airplane_data['airspeed'] = vfr_hud['airspeed']
 
+    servo_pos_msg = connection.recv_match(type = 'SERVO_OUTPUT_RAW')
+    if servo_pos_msg is not None:
+        servo_pos_msg = servo_pos_msg.to_dict()
+        control_surfaces['elevator']['servo_actual_pwm'] = servo_pos_msg['servo5_raw']
+        control_surfaces['rudder']['servo_actual_pwm'] = servo_pos_msg['servo6_raw']
+        control_surfaces['port_aileron']['servo_actual_pwm'] = servo_pos_msg['servo1_raw']
+        control_surfaces['port_flap']['servo_actual_pwm'] = servo_pos_msg['servo2_raw']
+        control_surfaces['starboard_aileron']['servo_actual_pwm'] = servo_pos_msg['servo3_raw']
+        control_surfaces['starboard_flap']['servo_actual_pwm'] = servo_pos_msg['servo4_raw']
+
+
     # if msg.get_type() == 'SYS_STATUS': #get type of message , check mavlink inspector on missionplanner to get type.
     #     sys_status=msg.to_dict()
     #     print(sys_status['drop_rate_comm'])
 
-LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON, start_pos = 0)
-RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON, start_pos = 0)
-ELEVATOR = Servo(CHANNEL_ELEVATOR, start_pos = 0)
-RUDDER = Servo(CHANNEL_RUDDER, start_pos = 0)
-LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = -1)
-RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = -1)
+LEFT_AILERON = Servo(CHANNEL_LEFT_AILERON, start_pos = control_surfaces['port_aileron']['servo_actual'])
+LEFT_FLAP = Servo(CHANNEL_LEFT_FLAP, start_pos = control_surfaces['port_flap']['servo_actual'])
+RIGHT_AILERON = Servo(CHANNEL_RIGHT_AILERON, start_pos = control_surfaces['starboard_aileron']['servo_actual'])
+RIGHT_FLAP = Servo(CHANNEL_RIGHT_FLAP, start_pos = control_surfaces['starboard_flap']['servo_actual'])
+ELEVATOR = Servo(CHANNEL_ELEVATOR, start_pos = control_surfaces['elevator']['servo_actual'])
+RUDDER = Servo(CHANNEL_RUDDER, start_pos = control_surfaces['rudder']['servo_actual'])
 
 pitch_pid = Pid_controller(PID_values['output_limits'], 1)
 flap_damper = SmoothDamp()
@@ -326,34 +342,51 @@ aileron_damper = SmoothDamp()
 prev_flap_angle = 0
 prev_aileron_angle = 0
 
+def elevator_feedback():
+    error = 0
+    gain = 0.05
+    if control_surfaces['elevator']['feedback_mode']:
+        ideal_deflection = input_commands['elevator']  * 45
+        actual_deflection = control_surfaces['elevator']['angle']
+        error = (ideal_deflection - actual_deflection) * gain
+    return error
+
 def flight_controller():
+    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
+    # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
+    input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
+    input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
+    if not input_commands['ap_on']:
+        input_commands['pitch_pid'] = 0
+        input_commands['pitch_pid_unclamped'] = 0
+        pitch_pid.reset_integrator()
+
     if TESTING_REAL_PLANE_CHANNELS:
         global prev_flap_angle
         flap_angle = flap_damper.smooth_damp( (input_commands['flap_setting']-1), 1.2, 1.5, flight_controller_timer.DELTA_TIME)
         prev_flap_angle = flap_angle
 
         if not control_surfaces['port_aileron']['manual_control']:
-            control_surfaces['port_aileron']['servo_demand'] = input_commands['aileron']
+            control_surfaces['port_aileron']['servo_demand'] = interpolator_port_aileron.value(input_commands['aileron'])
         if not control_surfaces['starboard_aileron']['manual_control']:
-            control_surfaces['starboard_aileron']['servo_demand'] = -input_commands['aileron']
+            control_surfaces['starboard_aileron']['servo_demand'] = interpolator_starboard_aileron.value(input_commands['aileron'])
         if not control_surfaces['port_flap']['manual_control']:
-            control_surfaces['port_flap']['servo_demand'] = -flap_angle * 0.4
+            control_surfaces['port_flap']['servo_demand'] = interpolator_port_flap.value(flap_angle)
         if not control_surfaces['starboard_flap']['manual_control']:
-            control_surfaces['starboard_flap']['servo_demand'] = flap_angle
+            control_surfaces['starboard_flap']['servo_demand'] = interpolator_starboard_flap.value(flap_angle)
         if not control_surfaces['elevator']['manual_control']:
+            foo = 0
             if not input_commands['ap_on']:
-                control_surfaces['elevator']['servo_demand'] = -input_commands['elevator']
-                input_commands['pitch_pid'] = 0
-                input_commands['pitch_pid_unclamped'] = 0
-                pitch_pid.reset_integrator()
+                foo = clamper(input_commands['elevator'], -1, 1)
             else:
-                cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
-                # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
-                input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
-                input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45
-                control_surfaces['elevator']['servo_demand'] = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting servo
+                input_commands['elevator'] = input_commands['pitch_pid']
+                foo = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting 
+
+            foo = clamper(foo  + elevator_feedback(), -1, 1)
+            control_surfaces['elevator']['servo_demand'] = interpolator_elevator.value(foo)
+
         if not control_surfaces['rudder']['manual_control']:
-            control_surfaces['rudder']['servo_demand'] = 0
+            control_surfaces['rudder']['servo_demand'] = interpolator_rudder.value(0)
 
         ################################################## Boilerplate
 
@@ -383,7 +416,6 @@ async def mavlink_loop():
         flip_servo_modes_tmx_gcs()
         fetch_messages_and_update()
         flight_controller()
-            
         mavlink_logging()
         await asyncio.sleep(0)
 
@@ -401,6 +433,13 @@ async def pico_loop(): #where all of the pico's events are handled
         airplane_data['pico_refresh_rate'] = pico_loop_rate_filter.get_value()
         await asyncio.sleep(0)
 
+async def instant_plot_loop():
+    while True:
+        if ui_commands['csv_plot'] == 1:
+            csv_plotflightdata.plot_the_csv_output()
+            ui_commands['csv_plot'] = 0
+        await asyncio.sleep(0)
+
 def live_data_plot_ini():
     control_surface_plot.ini()
     
@@ -414,12 +453,14 @@ async def async_loop():
     task1 = asyncio.create_task(mavlink_loop())
     task2 = asyncio.create_task(pygame_loop())
     task3 = asyncio.create_task(pico_loop())
-    await asyncio.gather(task1, task2, task3)
+    task4 = asyncio.create_task(instant_plot_loop())
+    await asyncio.gather(task1, task2, task3, task4)
 
 #tasks set to run only when graphics only is true
 async def graphics_only_async_loop():
     task3 = asyncio.create_task(pygame_loop())
-    await asyncio.gather(task3)
+    task4 = asyncio.create_task(instant_plot_loop())
+    await asyncio.gather(task3, task4)
 
 def worker():
     #creating a thread for live data plotter server (because it's a blocking function that is already running an asyncio loop)
