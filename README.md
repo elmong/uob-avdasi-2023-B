@@ -1,4 +1,4 @@
-#I TOLD YOU NOT TO LOOK!
+# I TOLD YOU NOT TO LOOK!
 
 project directory/ is where most of the thing happens
 
