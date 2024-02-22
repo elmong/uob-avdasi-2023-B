@@ -510,6 +510,13 @@ def draw_control_bar_hori(x, y, arrow_side, arrow_ratio, text, value):
         draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y+25)
     
 def draw_ctrl_diag():
+    angle_pail = control_surfaces['port_aileron']['angle']
+    angle_pflap = control_surfaces['port_flap']['angle']
+    angle_sail = control_surfaces['starboard_aileron']['angle']
+    angle_sflap = control_surfaces['starboard_flap']['angle']
+    angle_elev = control_surfaces['elevator']['angle']
+    angle_rud = control_surfaces['rudder']['angle']
+
     draw_rectangle(1225, 540, 1860-1225, 1000-540, colours['light_blue'], 2)
     draw_rectangle(1323, 569, 465, 65, colours['pearl'], 2) # wings
 
@@ -531,17 +538,16 @@ def draw_ctrl_diag():
 
     draw_line((center_x, 825), (center_x, 855), 5, colours['green_blue'])
 
-    test_val = 0
+    draw_control_bar_vert(1353, 735, 'left', angle_pail/40, 'L AIL', angle_pail)
+    draw_control_bar_vert(2*center_x-1353, 735, 'right', angle_sail/40, 'R AIL', angle_sail)
+    draw_control_bar_vert(1415, 895, 'left', angle_elev/45, 'ELEV', angle_elev)
 
-    draw_control_bar_vert(1353, 735, 'left', test_val, 'L AIL', test_val)
-    draw_control_bar_vert(2*center_x-1353, 735, 'right', test_val, 'R AIL', test_val)
-    draw_control_bar_vert(1415, 895, 'left', test_val, 'ELEV', test_val)
+    draw_control_bar_hori(center_x, 900, 'down', angle_rud/40, 'RUD', angle_rud)
 
-    draw_control_bar_hori(center_x, 900, 'down', test_val, 'RUD', test_val)
+    draw_control_bar_hori(center_x - 70, 700, 'up', angle_pflap/30, 'L FLAP', angle_pflap)
+    draw_control_bar_hori(center_x + 70, 700, 'up', angle_sflap/30, 'R FLAP', angle_sflap)
 
-    draw_control_bar_hori(center_x - 70, 700, 'up', test_val, 'L FLAP', test_val)
-    draw_control_bar_hori(center_x + 70, 700, 'up', test_val, 'R FLAP', test_val)
-
+    draw_text_xcentered('//FLT CTRL //', fonts['dbxl_title'], colours['pearl'], 1730 , 940)
 
 
 spd_filter = RCLowPassFilter(0.2)
@@ -875,8 +881,8 @@ def draw_servo_diagnostic():
         draw_text_centered("MANUAL OVRD", fonts['dbxl_title'], colours['pearl'], 1702, 306)
 
     draw_text("// HALL SENSOR POSITION", fonts['dbxl_supersmall'], colours['pearl'], 1520, 218+122)
-    # FIXME this should not be servo_ratio_actual
-    draw_text(("+" if servo_ratio_actual >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
+
+    draw_text(("+" if surface_angle >= 0 else "-")+(str(int(abs(surface_angle))).zfill(2) + " DEG"), fonts['helvetica_massive'], colours['pearl'], 1625, 237+122)
     draw_text_centered("[   <<<     >>>   ]", fonts['helvetica_bold'], colours['pearl'], 1702, 302+122)
 
     if not servo_in_manual:
