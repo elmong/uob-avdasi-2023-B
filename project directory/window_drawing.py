@@ -839,6 +839,7 @@ def draw_servo_diagnostic():
     servo_ratio_actual = 0
     servo_in_manual = False
     servo_in_feedback = False
+    servo_pwm = 0
     title = "CTRL "
 
     match servo_display.page_number:
@@ -849,6 +850,7 @@ def draw_servo_diagnostic():
             servo_ratio_actual = control_surfaces['port_aileron']['servo_actual']
             servo_in_manual = control_surfaces['port_aileron']['manual_control']
             servo_in_feedback = control_surfaces['port_aileron']['feedback_mode']
+            servo_pwm = control_surfaces['port_aileron']['servo_actual_pwm']
             title += "- L AILERON"
         case 2:
             #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['port_flap']['angle']
@@ -857,6 +859,7 @@ def draw_servo_diagnostic():
             servo_ratio_actual = control_surfaces['port_flap']['servo_actual']
             servo_in_manual = control_surfaces['port_flap']['manual_control']
             servo_in_feedback = control_surfaces['port_flap']['feedback_mode']
+            servo_pwm = control_surfaces['port_flap']['servo_actual_pwm']
             title += "- L FLAP"
         case 3:
             #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['starboard_aileron']['angle']
@@ -865,6 +868,7 @@ def draw_servo_diagnostic():
             servo_ratio_actual = control_surfaces['starboard_aileron']['servo_actual']
             servo_in_manual = control_surfaces['starboard_aileron']['manual_control']
             servo_in_feedback = control_surfaces['starboard_aileron']['feedback_mode']
+            servo_pwm = control_surfaces['starboard_aileron']['servo_actual_pwm']
             title += "- R AILERON"
         case 4:
             #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['starboard_flap']['angle']
@@ -873,6 +877,7 @@ def draw_servo_diagnostic():
             servo_ratio_actual = control_surfaces['starboard_flap']['servo_actual']
             servo_in_manual = control_surfaces['starboard_flap']['manual_control']
             servo_in_feedback = control_surfaces['starboard_flap']['feedback_mode']
+            servo_pwm = control_surfaces['starboard_flap']['servo_actual_pwm']
             title += "- R FLAP"
         case 5:
             #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']
@@ -881,6 +886,7 @@ def draw_servo_diagnostic():
             servo_ratio_actual = control_surfaces['elevator']['servo_actual']
             servo_in_manual = control_surfaces['elevator']['manual_control']
             servo_in_feedback = control_surfaces['elevator']['feedback_mode']
+            servo_pwm = control_surfaces['elevator']['servo_actual_pwm']
             title += "- ELEVATOR"
         case 6:
             #surface_angle = angle_sensor_data_live['rudder']#control_surfaces['rudder']['angle']
@@ -889,10 +895,9 @@ def draw_servo_diagnostic():
             servo_ratio_actual = control_surfaces['rudder']['servo_actual']
             servo_in_manual = control_surfaces['rudder']['manual_control']
             servo_in_feedback = control_surfaces['rudder']['feedback_mode']
+            servo_pwm = control_surfaces['rudder']['servo_actual_pwm']
             title += "- RUDDER"
     
-    servo_demand = ratio_to_pwm(servo_demand) # TODO swap this with actual
-
     draw_text(title, fonts['helvetica_small'], colours['pearl'], 978, 217)
 
     draw_text(servo_display.page_number, fonts['helvetica'], colours['dark_blue'], 948, 215)
@@ -926,9 +931,9 @@ def draw_servo_diagnostic():
         draw_text_centered("FEEDBACK", fonts['dbxl_title'], colours['dark_blue'], 1702, 308+122)
 
     if not servo_in_manual:
-        draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['green_blue'], 1070, 420)
+        draw_text_centered("PWM LIVE: "+str(int(servo_pwm)).zfill(3), fonts['dbxl_title'], colours['green_blue'], 1070, 420)
     else:
-        draw_text_centered("PWM VAL: "+str(int(servo_demand)).zfill(3), fonts['dbxl_title'], colours['red'], 1070, 420)
+        draw_text_centered("PWM LIVE: "+str(int(servo_pwm)).zfill(3), fonts['dbxl_title'], colours['red'], 1070, 420)
 
 def draw_aoa_bar(aoa):
     draw_rectangle(614, 215, 280, 70, colours['light_blue'], 2)

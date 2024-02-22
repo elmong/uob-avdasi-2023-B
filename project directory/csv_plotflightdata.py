@@ -2,6 +2,14 @@ import csv
 import matplotlib.pyplot as plt
 import glob
 import os
+import sys
+import subprocess
+
+def openImage(path):
+    imageViewerFromCommandLine = {'linux':'xdg-open',
+                                  'win32':'explorer',
+                                  'darwin':'open'}[sys.platform]
+    subprocess.run([imageViewerFromCommandLine, path])
 
 def plot_the_csv_output():
     print('######################################## INSTANT PLOTTER CALLED ########################################')
@@ -58,15 +66,18 @@ def plot_the_csv_output():
     
     plt.figure(figsize=(10, 3))
     # Plotting column 2 vs column 1 as a red line graph with higher DPI
-    plt.plot(column1, column2, color='blue', linestyle='-', linewidth = 2)
+    plt.plot(column1, column2, color='blue', linestyle='-', linewidth = 1.5)
     plt.xlabel('Time Elapsed (s)')
     plt.ylabel('Pitch (deg)')
     plt.title('Pitch')
     plt.grid(True)
-    plt.savefig('Pitch.png', dpi=200)  # Save the figure with higher DPI
-    plt.show()
-    
-    
+    image_save_path = os.path.join(root_path, 'temp_plots', 'Pitch.png')
+    plt.savefig(image_save_path, dpi=200)  # Save the figure with higher DPI
+    # plt.show()
+    print("********* FILE SAVED AT: "+image_save_path + ' *********')
+
+    openImage(image_save_path)
+
     # WHICH_COLUMN_TO_PLOT = 3
     # 
     # column1 = []
