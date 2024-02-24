@@ -32,6 +32,7 @@ fonts = {
     'helvetica_supersmall': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 12),
     'helvetica_bold': pygame.font.Font(os.path.join(root_path, 'fonts', 'helvetica.ttf'), 25),
     'dbxl': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 32),
+    'dbxl_25': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 25),
     'dbxl_title': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 20),
     'dbxl_massive': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 60),
     'dbxl_small': pygame.font.Font(os.path.join(root_path, 'fonts', 'dbxl.ttf'), 15),
@@ -496,41 +497,71 @@ def draw_control_bar_vert(x, y, arrow_side, arrow_ratio, text, value): # arrow r
     draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+70)
 
     number = '{:.2f}'.format(value)
-    y = y - arrow_ratio * 60
+    arrow_height = clamper(arrow_ratio * 60, -60, 60)
+    y = y - arrow_height
     if arrow_side == 'left':
         x = x - 4
         draw_line((x, y), (x-20, y-11), 3, colours['green'])
         draw_line((x, y), (x-20, y+11), 3, colours['green'])
         draw_line((x-20, y-11), (x-20, y+11), 3, colours['green'])
         draw_text_right_ycentered(number, fonts['dbxl_small'], colours['green'], x - 25, y)
+        x = x + 7
+
+        if arrow_height > 0:
+            pygame.draw.rect(screen, colours['light_grey'], (x, y, 8, arrow_height))
+        else:
+            pygame.draw.rect(screen, colours['light_grey'], (x, y+arrow_height, 8, -arrow_height))
     elif arrow_side == 'right':
         x = x + 4
         draw_line((x, y), (x+20, y-11), 3, colours['green'])
         draw_line((x, y), (x+20, y+11), 3, colours['green'])
         draw_line((x+20, y-11), (x+20, y+11), 3, colours['green'])
         draw_text_ycentered(number, fonts['dbxl_small'], colours['green'], x + 25, y)
+        x = x - 5
+
+        if arrow_height > 0:
+            pygame.draw.rect(screen, colours['light_grey'], (x-8, y, 8, arrow_height))
+        else:
+            pygame.draw.rect(screen, colours['light_grey'], (x-8, y+arrow_height, 8, -arrow_height))
 
 def draw_control_bar_hori(x, y, arrow_side, arrow_ratio, text, value):
     draw_line((x-60, y), (x+60, y), 2, colours['pearl'])
     draw_line((x-60, y-10), (x-60, y+10), 2, colours['pearl'])
     draw_line((x+60, y-10), (x+60, y+10), 2, colours['pearl'])
+    if arrow_side == 'up':
+        draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x , y+15)
+    if arrow_side == 'down':
+        draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x , y+55)
+    
+    center_x = x
 
     number = '{:.2f}'.format(value)
-    x = x + arrow_ratio * 60
+    arrow_shift = clamper(arrow_ratio * 60, -60, 60)
+    x = x + arrow_shift
     if arrow_side == 'up':
         y = y - 4
-        draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+15)
         draw_line((x, y), (x-11, y-20), 3, colours['green'])
         draw_line((x, y), (x+11, y-20), 3, colours['green'])
         draw_line((x-11, y-20), (x+11, y-20), 3, colours['green'])
         draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y-40)
+
+        y = y + 7
+        if arrow_shift > 0:
+            pygame.draw.rect(screen, colours['light_grey'], (center_x, y, arrow_shift, 8))
+        else:
+            pygame.draw.rect(screen, colours['light_grey'], (center_x, y, -arrow_shift, 8))
     elif arrow_side == 'down':
         y = y + 4
-        draw_text_xcentered(text, fonts['dbxl_small'], colours['pearl'], x, y+55)
         draw_line((x, y), (x-11, y+20), 3, colours['green'])
         draw_line((x, y), (x+11, y+20), 3, colours['green'])
         draw_line((x-11, y+20), (x+11, y+20), 3, colours['green'])
-        draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y+25)
+        draw_text_xcentered(number, fonts['dbxl_small'], colours['green'], x , y+35)
+
+        y = y - 13
+        if arrow_shift > 0:
+            pygame.draw.rect(screen, colours['light_grey'], (center_x, y, arrow_shift, 8))
+        else:
+            pygame.draw.rect(screen, colours['light_grey'], (center_x+arrow_shift, y, -arrow_shift, 8))
     
 def draw_ctrl_diag():
     angle_pail = control_surfaces['port_aileron']['angle']
@@ -578,87 +609,94 @@ trend_filter = MovingAverage(60)
 prev_spd = 0
 def draw_spd_tape(spd):
     # the frame
-    draw_line((80, 320), (180, 320), 2, colours['light_blue'])
-    draw_line((157, 320), (157, 783), 2, colours['light_blue'])
-    draw_line((80, 783), (180, 783), 2, colours['light_blue'])
 
-    global prev_spd
-    spd_filter.update(spd)
-    spd = spd_filter.get_value()
-    trend_filter.update((spd - prev_spd)/pygame_loop_timer.DELTA_TIME)
-    spd_trend = trend_filter.get_value()
-    prev_spd = spd
+    if spd < 2:
+        draw_line((80, 320), (180, 320), 3, colours['amber'])
+        draw_line((157, 320), (157, 783), 3, colours['amber'])
+        draw_line((80, 783), (180, 783), 3, colours['amber'])
+        draw_text_centered('SPD', fonts['dbxl_25'], colours['amber'], 125 - 15, (320+783)/2 - 15)
+        draw_text_centered('LOW', fonts['dbxl_25'], colours['amber'], 125 - 15, (320+783)/2 + 15)
+    else:
+        draw_line((80, 320), (180, 320), 2, colours['light_blue'])
+        draw_line((157, 320), (157, 783), 2, colours['light_blue'])
+        draw_line((80, 783), (180, 783), 2, colours['light_blue'])
+        global prev_spd
+        spd_filter.update(spd)
+        spd = spd_filter.get_value()
+        trend_filter.update((spd - prev_spd)/pygame_loop_timer.DELTA_TIME)
+        spd_trend = trend_filter.get_value()
+        prev_spd = spd
 
-    # the tape
-    screen.set_clip((80, 322), (180-80, 783-322))
-    center_y = (320 + 783)/2
-    px_per_ms = 50
-    spd_offset = spd * px_per_ms
-    loop_start = -7 + int(spd)
-    loop_end = 7 + int(spd)
-    for i in range(loop_start, loop_end):
-        y_coord = center_y - i * px_per_ms + spd_offset - 1
-        if i%2 == 0:
-            if i >= 0:
-                draw_text_right(str(i).zfill(2), fonts['helvetica'], colours['pearl'], 125, y_coord - 15)
+        # the tape
+        screen.set_clip((80, 322), (180-80, 783-322))
+        center_y = (320 + 783)/2
+        px_per_ms = 50
+        spd_offset = spd * px_per_ms
+        loop_start = -7 + int(spd)
+        loop_end = 7 + int(spd)
+        for i in range(loop_start, loop_end):
+            y_coord = center_y - i * px_per_ms + spd_offset - 1
+            if i%2 == 0:
+                if i >= 0:
+                    draw_text_right(str(i).zfill(2), fonts['helvetica'], colours['pearl'], 125, y_coord - 15)
+                else:
+                    draw_text_right(str(i).zfill(3), fonts['helvetica'], colours['pearl'], 125, y_coord - 15)
+            pygame.draw.rect(screen, colours['pearl'], (140,y_coord-1,17,2))
+            for j in range(4):
+                pygame.draw.rect(screen, colours['pearl_grey'], (145,y_coord-1 - (j+1) * px_per_ms/5,12,2))
+        draw_line((145, center_y-2), (180, center_y-2), 5, colours['green_blue'])
+        screen.set_clip(None)
+
+        #speed trend
+        if abs(spd_trend) > 0.2:
+            trend_tip_y = center_y - 30 * spd_trend
+            trend_tip_y = clamper(trend_tip_y, 320, 783)
+            draw_line((169, center_y), (169, trend_tip_y), 2, colours['green'])
+            if spd_trend < 0:
+                draw_line((169, trend_tip_y), (169-6, trend_tip_y-12), 2, colours['green'])
+                draw_line((169, trend_tip_y), (169+6, trend_tip_y-12), 2, colours['green'])
             else:
-                draw_text_right(str(i).zfill(3), fonts['helvetica'], colours['pearl'], 125, y_coord - 15)
-        pygame.draw.rect(screen, colours['pearl'], (140,y_coord-1,17,2))
-        for j in range(4):
-            pygame.draw.rect(screen, colours['pearl_grey'], (145,y_coord-1 - (j+1) * px_per_ms/5,12,2))
-    draw_line((145, center_y-2), (180, center_y-2), 5, colours['green_blue'])
-    screen.set_clip(None)
-
-    #speed trend
-    if abs(spd_trend) > 0.2:
-        trend_tip_y = center_y - 30 * spd_trend
-        trend_tip_y = clamper(trend_tip_y, 320, 783)
-        draw_line((169, center_y), (169, trend_tip_y), 2, colours['green'])
-        if spd_trend < 0:
-            draw_line((169, trend_tip_y), (169-6, trend_tip_y-12), 2, colours['green'])
-            draw_line((169, trend_tip_y), (169+6, trend_tip_y-12), 2, colours['green'])
-        else:
-            draw_line((169, trend_tip_y), (169-6, trend_tip_y+12), 2, colours['green'])
-            draw_line((169, trend_tip_y), (169+6, trend_tip_y+12), 2, colours['green'])
+                draw_line((169, trend_tip_y), (169-6, trend_tip_y+12), 2, colours['green'])
+                draw_line((169, trend_tip_y), (169+6, trend_tip_y+12), 2, colours['green'])
 
 
-    pygame.draw.polygon(screen, colours['bgd'], ((63, 527),(133, 527),(155, 550), (133, 573),(63, 573) ))   
-    draw_line((63, 527), (133, 527), 2, colours['pearl'])
-    draw_line((155, 550), (133, 527), 3, colours['pearl'])
-    draw_line((155, 550), (133, 573), 3, colours['pearl'])
-    draw_line((133, 573), (63, 573), 2, colours['pearl'])
-    draw_line((63, 527), (63, 573), 2, colours['pearl'])
+        pygame.draw.polygon(screen, colours['bgd'], ((63, 527),(133, 527),(155, 550), (133, 573),(63, 573) ))   
+        draw_line((63, 527), (133, 527), 2, colours['pearl'])
+        draw_line((155, 550), (133, 527), 3, colours['pearl'])
+        draw_line((155, 550), (133, 573), 3, colours['pearl'])
+        draw_line((133, 573), (63, 573), 2, colours['pearl'])
+        draw_line((63, 527), (63, 573), 2, colours['pearl'])
 
-    screen.set_clip((64, 528), (133-64, 573-528))
-    roll_px = 26
-    scrolling_start = 0.9
+        screen.set_clip((64, 528), (133-64, 573-528))
+        roll_px = 26
+        scrolling_start = 0.9
 
-    for i in range(-2, 12):
-        y_decimal = i * roll_px - (spd%1*10) * roll_px
+        for i in range(-2, 12):
+            y_decimal = i * roll_px - (spd%1*10) * roll_px
 
-        y_units = 0
-        if spd%1 < scrolling_start:
-            y_units = i * roll_px - math.floor(spd%10) * roll_px
-        else:
-            y_units = i * roll_px - math.floor(spd%10) * roll_px - lerp(((spd-spd%1)+scrolling_start, spd-spd%1+1), (0,1), spd)*roll_px
-        
-        y_tens = 0
-        if spd%10 < 9+scrolling_start:
-            y_tens = i * roll_px - math.floor(spd%100/10) * roll_px
-        else:
-            y_tens = i * roll_px - math.floor(spd%100/10) * roll_px - lerp(((spd-spd%10)+9+scrolling_start, spd-spd%10+10), (0,1), spd)*roll_px
+            y_units = 0
+            if spd%1 < scrolling_start:
+                y_units = i * roll_px - math.floor(spd%10) * roll_px
+            else:
+                y_units = i * roll_px - math.floor(spd%10) * roll_px - lerp(((spd-spd%1)+scrolling_start, spd-spd%1+1), (0,1), spd)*roll_px
 
-        y_decimal = clamper(y_decimal, -235, 235)
-        y_units = clamper(y_units, -235, 235)
-        y_tens = clamper(y_tens, -235, 235)
-        draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 125, 550 - y_decimal)
-        draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 101, 550 - y_units)
-        draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 85, 550 - y_tens)
+            y_tens = 0
+            if spd%10 < 9+scrolling_start:
+                y_tens = i * roll_px - math.floor(spd%100/10) * roll_px
+            else:
+                y_tens = i * roll_px - math.floor(spd%100/10) * roll_px - lerp(((spd-spd%10)+9+scrolling_start, spd-spd%10+10), (0,1), spd)*roll_px
 
-    pygame.draw.rect(screen, colours['green'], (110,558,3,3))
-    screen.set_clip(None)
-    draw_image_centered(textures['shader'], (63+133)/2+2, (527+573)/2+1)
-    # pygame.draw.rect(screen, colours['bgd'], (63+2, 527+2,133-63-2,573-527-2))
+            y_decimal = clamper(y_decimal, -235, 235)
+            y_units = clamper(y_units, -235, 235)
+            y_tens = clamper(y_tens, -235, 235)
+            draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 125, 550 - y_decimal)
+            draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 101, 550 - y_units)
+            draw_text_centered(str(i%10), fonts['helvetica_big'], colours['green'], 85, 550 - y_tens)
+
+        pygame.draw.rect(screen, colours['green'], (110,558,3,3))
+        screen.set_clip(None)
+        draw_image_centered(textures['shader'], (63+133)/2+2, (527+573)/2+1)
+        # pygame.draw.rect(screen, colours['bgd'], (63+2, 527+2,133-63-2,573-527-2))
 
 class Stepper:
     def __init__(self):
@@ -851,7 +889,7 @@ def draw_servo_diagnostic():
             servo_in_manual = control_surfaces['port_aileron']['manual_control']
             servo_in_feedback = control_surfaces['port_aileron']['feedback_mode']
             servo_pwm = control_surfaces['port_aileron']['servo_actual_pwm']
-            title += "- L AILERON"
+            title += "- PORT AILERON"
         case 2:
             #surface_angle = angle_sensor_data_live['pflap']#control_surfaces['port_flap']['angle']
             surface_angle =control_surfaces['port_flap']['angle']
@@ -860,7 +898,7 @@ def draw_servo_diagnostic():
             servo_in_manual = control_surfaces['port_flap']['manual_control']
             servo_in_feedback = control_surfaces['port_flap']['feedback_mode']
             servo_pwm = control_surfaces['port_flap']['servo_actual_pwm']
-            title += "- L FLAP"
+            title += "- PORT FLAP"
         case 3:
             #surface_angle = angle_sensor_data_live['saileron']#control_surfaces['starboard_aileron']['angle']
             surface_angle =control_surfaces['starboard_aileron']['angle']
@@ -869,7 +907,7 @@ def draw_servo_diagnostic():
             servo_in_manual = control_surfaces['starboard_aileron']['manual_control']
             servo_in_feedback = control_surfaces['starboard_aileron']['feedback_mode']
             servo_pwm = control_surfaces['starboard_aileron']['servo_actual_pwm']
-            title += "- R AILERON"
+            title += "- STARBOARD AILERON"
         case 4:
             #surface_angle = angle_sensor_data_live['sflap']#control_surfaces['starboard_flap']['angle']
             surface_angle =control_surfaces['starboard_flap']['angle']
@@ -878,7 +916,7 @@ def draw_servo_diagnostic():
             servo_in_manual = control_surfaces['starboard_flap']['manual_control']
             servo_in_feedback = control_surfaces['starboard_flap']['feedback_mode']
             servo_pwm = control_surfaces['starboard_flap']['servo_actual_pwm']
-            title += "- R FLAP"
+            title += "- STARBOARD FLAP"
         case 5:
             #surface_angle = angle_sensor_data_live['elevator']#control_surfaces['elevator']['angle']
             surface_angle =control_surfaces['elevator']['angle']
