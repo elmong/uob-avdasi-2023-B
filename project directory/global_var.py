@@ -126,12 +126,12 @@ interpolator_port_aileron = Interpolator([
     (0, -0.0), 
     (1, 0.3)])
 interpolator_port_flap = Interpolator(
-    [(-1, 0.00), 
-     (0, 0.15), 
-     (1, 0.29)])
+    [(-1, 0.035), 
+     (0, 0.14), 
+     (1, 0.24)])
 interpolator_starboard_aileron = Interpolator(
     [(-1, -1), 
-     (0, -0.67), 
+     (0, -0.47), 
      (1, -0.28)])
 interpolator_starboard_flap = Interpolator(
     [(-1, -1), 

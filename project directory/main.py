@@ -31,9 +31,9 @@ import csv_plotflightdata
 
 ################################
 
-TESTING_ON_SIM = False
+TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 30 # Hz

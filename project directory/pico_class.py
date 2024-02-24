@@ -50,7 +50,7 @@ class Pico:
         try:
             self.Actual_id = GCS_serial_reader.ReadSerialMessage(self.Connection)
         except:
-            self.Connection_status = False
+            pass
         
         
         #self.Actual_id = GCS_serial_reader.ReadSerialMessage(self.Connection)
