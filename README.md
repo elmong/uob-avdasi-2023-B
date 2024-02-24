@@ -1,5 +1,7 @@
 # TOLD YOU NOT TO LOOK AT OUR CODE!!!!!!!
 
+![alt text]([https://github.com/hkkhkhkhk/ConcFBW/blob/main/diagrams/flytheairplane.png](https://github.com/elmong/uob-avdasi-2023-B/blob/main/github_img/software2.png))
+
 project directory/ is where most of the thing happens
 
 Control surfaces system:
@@ -79,4 +81,3 @@ And the second method being sending a manual control message which overrides the
 ```
 
 The UI script is rather straightforward and does not involve complex logics such as on the main mavlink script which needs a lot of care.
-# Ivan feel free to do your doc below
