@@ -4,7 +4,6 @@ from pymavlink import mavutil
 from datetime import datetime
 import asyncio
 import time
-import time
 import math
 import csv
 import os
@@ -33,10 +32,10 @@ import csv_plotflightdata
 
 TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = False
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
-DATA_REFRESH_RATE_GLOBAL = 30 # Hz
+DATA_REFRESH_RATE_GLOBAL = 40 # Hz
 DELTA_TIME = 0.01
 SERVO_RATE_LIMIT = 5
 
@@ -198,7 +197,7 @@ if not TESTING_GRAPHICS_ONLY:
     print("Heartbeat from system (system %u component %u)" % (connection.target_system, connection.target_component))
     mav_commands = [mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 
                     mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD, #vfr hud stands for typical hud data on a fixed wing plane
-                    mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA,
+                    # mavutil.mavlink.MAVLINK_MSG_ID_AOA_SSA,
                     mavutil.mavlink.MAVLINK_MSG_ID_SERVO_OUTPUT_RAW]
     request_refresh_rate(connection, mav_commands)
 
@@ -305,10 +304,10 @@ def fetch_messages_and_update():
         mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())
         airplane_data['mavlink_refresh_rate'] = mavlink_loop_rate_filter.get_value()
 
-    aoa_ssa = connection.recv_match(type = 'AOA_SSA')
-    if aoa_ssa is not None:
-        aoa_ssa = aoa_ssa.to_dict()
-        airplane_data['aoa'] = aoa_ssa['AOA']
+    # aoa_ssa = connection.recv_match(type = 'AOA_SSA')
+    # if aoa_ssa is not None:
+    #     aoa_ssa = aoa_ssa.to_dict()
+    #     airplane_data['aoa'] = aoa_ssa['AOA']
 
     vfr_hud = connection.recv_match(type = 'VFR_HUD')
     if vfr_hud is not None:

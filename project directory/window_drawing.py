@@ -551,7 +551,7 @@ def draw_control_bar_hori(x, y, arrow_side, arrow_ratio, text, value):
         if arrow_shift > 0:
             pygame.draw.rect(screen, colours['light_grey'], (center_x, y, arrow_shift, 8))
         else:
-            pygame.draw.rect(screen, colours['light_grey'], (center_x, y, -arrow_shift, 8))
+            pygame.draw.rect(screen, colours['light_grey'], (center_x+arrow_shift, y, -arrow_shift, 8))
     elif arrow_side == 'down':
         y = y + 4
         draw_line((x, y), (x-11, y+20), 3, colours['green'])
