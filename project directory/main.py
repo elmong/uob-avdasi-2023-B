@@ -30,7 +30,7 @@ import csv_plotflightdata
 
 ################################
 
-TESTING_ON_SIM = True
+TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = False
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
@@ -169,7 +169,6 @@ def mavlink_logging():
                         airplane_data['roll'],
                         airplane_data['yaw'],
                         airplane_data["airspeed"],
-                        airplane_data["aoa"],
                         control_surfaces["port_aileron"]["servo_demand"],
                         control_surfaces["port_aileron"]["angle"],
                         control_surfaces["port_flap"]["servo_demand"],
@@ -226,6 +225,7 @@ def connect_picos():
 def collect_pico_msgs(): #collects all of the picos' messages
     for item in pico_array:
         item.read_message()
+    GCS_serial_reader.full_rate_adc_to_angle()
 
 #declare live data visualisation servers
 control_surface_plot = live_plotter_class.Live_plotter(80)
@@ -293,10 +293,10 @@ def fetch_messages_and_update():
     if attitude is not None:
         attitude = attitude.to_dict()
     #extract value from dictionary : so 'roll', 'pitch', 'yaw'
-        airplane_data['pitch'] = math.degrees(attitude['pitch'])
-        airplane_data['pitch_rate'] = math.degrees(attitude['pitchspeed'])
-        airplane_data['roll'] = math.degrees(attitude['roll'])
-        airplane_data['roll_rate'] = math.degrees(attitude['rollspeed'])
+        airplane_data['pitch'] = math.degrees(-attitude['roll'])
+        airplane_data['pitch_rate'] = math.degrees(-attitude['rollspeed'])
+        airplane_data['roll'] = math.degrees(attitude['pitch'])
+        airplane_data['roll_rate'] = math.degrees(attitude['pitchspeed'])
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
 

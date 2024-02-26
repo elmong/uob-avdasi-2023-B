@@ -60,39 +60,68 @@ class Control_Surface:
                     index1 +=1
             
             i = 0 #keeping track of the index of the next for loop
-            for index in adc_indexes[0]:
-                #set up values for linear interpolation, to find potential rates
-                #x is adc
-                #y is rate
-                x = adc_now
-                x2 = self.table[1][index]
-                x1 = self.table[1][adc_indexes[1][i]] 
-                y2 = self.table[0][index]  
-                y1 = self.table[0][adc_indexes[1][i]]   
-                #calculate and store possible rates
-                possible_rates.append(self.linear_interpolation(x,x1,x2,y1,y2))
+            if len(adc_indexes[0]) > 0:
+                for index in adc_indexes[0]:
+                    #set up values for linear interpolation, to find potential rates
+                    #x is adc
+                    #y is rate
+                    x = adc_now
+                    x2 = self.table[1][index]
+                    x1 = self.table[1][adc_indexes[1][i]] 
+                    y2 = self.table[0][index]  
+                    y1 = self.table[0][adc_indexes[1][i]]   
+                    #calculate and store possible rates
+                    possible_rates.append(self.linear_interpolation(x,x1,x2,y1,y2))
+                    
+                    i +=1
+                #find closest rate
+                interpolated_rate = self.find_closest_value(possible_rates,rate_now)
+                enclosing_high_rate = None
+                enclosing_low_rate = None
+                angle1 = None
+                angle2 = None
+                #find rate values which are closest to, and enclose, rate now
                 
-                i +=1
-            #find closest rate
-            interpolated_rate = self.find_closest_value(possible_rates,rate_now)
-            enclosing_high_rate = None
-            enclosing_low_rate = None
-            angle1 = None
-            angle2 = None
-            #find rate values which are closest to, and enclose, rate now
+                for rate in self.table[0]:
+                    if rate > interpolated_rate:
+                        enclosing_low_rate = self.table[0][self.table[0].index(rate) - 1] #get value just before
+                        enclosing_high_rate = rate
+                        #find corresponding angles for these rates
+                        angle1 = self.table[2][self.table[0].index(enclosing_low_rate)]
+                        angle2 = self.table[2][self.table[0].index(enclosing_high_rate)]
+                        break
+                
+                #interpolate angle from converted rate
+                interpolated_angle = self.linear_interpolation(interpolated_rate,enclosing_low_rate,enclosing_high_rate,angle1,angle2)
+                return interpolated_angle
             
-            for rate in self.table[0]:
-                if rate > interpolated_rate:
-                    enclosing_low_rate = self.table[0][self.table[0].index(rate) - 1] #get value just before
-                    enclosing_high_rate = rate
-                    #find corresponding angles for these rates
-                    angle1 = self.table[2][self.table[0].index(enclosing_low_rate)]
-                    angle2 = self.table[2][self.table[0].index(enclosing_high_rate)]
-                    break
-            
-            #interpolate angle from converted rate
-            interpolated_angle = self.linear_interpolation(interpolated_rate,enclosing_low_rate,enclosing_high_rate,angle1,angle2)
-            return interpolated_angle
+            else:
+                return 0
+        
+
+    #for a given rate value find angle
+    def rate_to_angle(self,rate_now):
+        
+        interpolated_rate = rate_now
+        enclosing_high_rate = None
+        enclosing_low_rate = None
+        angle1 = None
+        angle2 = None
+        #find rate values which are closest to, and enclose, rate now
+        
+        for rate in self.table[0]:
+            if rate > interpolated_rate:
+                enclosing_low_rate = self.table[0][self.table[0].index(rate) - 1] #get value just before
+                enclosing_high_rate = rate
+                #find corresponding angles for these rates
+                angle1 = self.table[2][self.table[0].index(enclosing_low_rate)]
+                angle2 = self.table[2][self.table[0].index(enclosing_high_rate)]
+                
+                break
+        
+        #interpolate angle from converted rate
+        interpolated_angle = self.linear_interpolation(interpolated_rate,enclosing_low_rate,enclosing_high_rate,angle1,angle2)
+        return interpolated_angle
             
             
 
