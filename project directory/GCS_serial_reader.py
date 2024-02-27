@@ -26,9 +26,9 @@ PORT_AILERON = control_surface_map_class.Control_Surface("port_aileron",
                                                           [17800,16800,15300,15100,14200,22750,30400,25200,24800,22600,21000],
                                                           [-40,-32,-26,-24,-20,0,12,24,28,34,51]])
 PORT_FLAP = control_surface_map_class.Control_Surface("port_flap",
-                                                      [[0.04,0.07,0.17,0.21,0.27],
-                                                       [9500,6200,17200,21950,23800],
-                                                       [0,-5,-19,-21,-32]])
+                                                      [[-0.23,-0.2,-0.14,-0.06,-0.04,0],
+                                                       [22000,20800,19800,19400,19450,19500],
+                                                       [0,7,15,23,28,31]])
 STARBOARD_AILERON = control_surface_map_class.Control_Surface("starboard_aileron",
                                                               [[0],
                                                                [0],
@@ -50,7 +50,7 @@ def full_rate_adc_to_angle():
     control_surfaces['rudder']['angle'] = RUDDER.rate_to_angle(control_surfaces['rudder']['servo_actual'])
     
     control_surfaces['port_aileron']['angle']= PORT_AILERON.rate_adc_to_angle(control_surfaces['port_aileron']['servo_actual'], PORT_AILERON.adc_now)
-    #control_surfaces['port_flap']['angle'] = PORT_FLAP.rate_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
+    control_surfaces['port_flap']['angle'] = PORT_FLAP.rate_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
 
     #control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.rate_adc_to_angle(control_surfaces['starboard_aileron']['servo_actual'], STARBOARD_AILERON.adc_now)
     control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.rate_to_angle(control_surfaces['starboard_flap']['servo_actual'])
