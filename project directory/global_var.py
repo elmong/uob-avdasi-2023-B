@@ -131,8 +131,8 @@ interpolator_port_flap = Interpolator(
      (1, 0)])
 interpolator_starboard_aileron = Interpolator(
     [(-1, -1), 
-     (0, -0.76), 
-     (1, -0.25)])
+     (0, -0.73), 
+     (1, 0)])
 interpolator_starboard_flap = Interpolator(
     [(-1, -1), 
      (0, -0.74), 

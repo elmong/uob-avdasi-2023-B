@@ -31,7 +31,7 @@ import csv_plotflightdata
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
@@ -170,16 +170,22 @@ def mavlink_logging():
                         airplane_data['yaw'],
                         airplane_data["airspeed"],
                         control_surfaces["port_aileron"]["servo_demand"],
+                        control_surfaces["port_aileron"]["servo_actual"],
                         control_surfaces["port_aileron"]["angle"],
+                        control_surfaces["port_flap"]["servo_demand"],
                         control_surfaces["port_flap"]["servo_demand"],
                         control_surfaces["port_flap"]["angle"],
                         control_surfaces["starboard_aileron"]["servo_demand"],
+                        control_surfaces["starboard_aileron"]["servo_actual"],
                         control_surfaces["starboard_aileron"]["angle"],
                         control_surfaces["starboard_flap"]["servo_demand"],
+                        control_surfaces["starboard_flap"]["servo_actual"],
                         control_surfaces["starboard_flap"]["angle"],
                         control_surfaces["elevator"]["servo_demand"],
+                        control_surfaces["elevator"]["servo_actual"],
                         control_surfaces["elevator"]["angle"],
                         control_surfaces["rudder"]["servo_demand"],
+                        control_surfaces["rudder"]["servo_actual"],
                         control_surfaces["rudder"]["angle"]
                         )
     else:
