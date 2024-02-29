@@ -34,6 +34,10 @@ TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
+
+TESTING_IS_PW = False
+TESTING_IS_SW = False
+TESTING_IS_FUS = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 40 # Hz
 DELTA_TIME = 0.01
@@ -397,12 +401,15 @@ def flight_controller():
         ################################################## Boilerplate
 
         if input_commands['gcs_in_control']:
-            LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
-            RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
-            ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
-            RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
-            LEFT_FLAP.set_val(control_surfaces['port_flap']['servo_demand'])
-            RIGHT_FLAP.set_val(control_surfaces['starboard_flap']['servo_demand'])
+            if TESTING_IS_PW:
+                LEFT_AILERON.set_val(control_surfaces['port_aileron']['servo_demand'])
+                LEFT_FLAP.set_val(control_surfaces['port_flap']['servo_demand'])
+            if TESTING_IS_SW:
+                RIGHT_AILERON.set_val(control_surfaces['starboard_aileron']['servo_demand'])
+                RIGHT_FLAP.set_val(control_surfaces['starboard_flap']['servo_demand'])
+            if TESTING_IS_FUS:
+                ELEVATOR.set_val(control_surfaces['elevator']['servo_demand'])
+                RUDDER.set_val(control_surfaces['rudder']['servo_demand'])
 
         control_surfaces['port_aileron']['servo_actual'] = LEFT_AILERON.get_val()
         control_surfaces['starboard_aileron']['servo_actual'] = RIGHT_AILERON.get_val()
