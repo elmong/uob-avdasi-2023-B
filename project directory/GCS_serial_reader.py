@@ -51,7 +51,7 @@ def full_rate_adc_to_angle():
     control_surfaces['port_aileron']['angle']= PORT_AILERON.rate_adc_to_angle(control_surfaces['port_aileron']['servo_actual'], PORT_AILERON.adc_now)
     control_surfaces['port_flap']['angle'] = PORT_FLAP.rate_adc_to_angle(control_surfaces['port_flap']['servo_actual'], PORT_FLAP.adc_now)
 
-    control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.rate_to_angle(control_surfaces['starboard_aileron']['servo_actual'], STARBOARD_AILERON.adc_now)
+    control_surfaces['starboard_aileron']['angle']= STARBOARD_AILERON.rate_to_angle(control_surfaces['starboard_aileron']['servo_actual'])
     control_surfaces['starboard_flap']['angle'] = STARBOARD_FLAP.rate_to_angle(control_surfaces['starboard_flap']['servo_actual'])
     return None
 
