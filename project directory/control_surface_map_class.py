@@ -120,12 +120,14 @@ class Control_Surface:
                 #find corresponding angles for these rates
                 angle1 = self.table[2][self.table[0].index(enclosing_low_rate)]
                 angle2 = self.table[2][self.table[0].index(enclosing_high_rate)]
-                
                 break
         
-        #interpolate angle from converted rate
-        interpolated_angle = self.linear_interpolation(interpolated_rate,enclosing_low_rate,enclosing_high_rate,angle1,angle2)
-        return interpolated_angle
+        if enclosing_low_rate != None and enclosing_high_rate != None:
+            #interpolate angle from converted rate
+            interpolated_angle = self.linear_interpolation(interpolated_rate,enclosing_low_rate,enclosing_high_rate,angle1,angle2)
+            return interpolated_angle
+        else:
+            return 0
             
             
 

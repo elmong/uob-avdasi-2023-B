@@ -30,10 +30,10 @@ import csv_plotflightdata
 
 ################################
 
-TESTING_ON_SIM = True
+TESTING_ON_SIM = False
 TESTING_GRAPHICS_ONLY = True
-TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
-TESTING_DO_BOKEH = False
+TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_DO_BOKEH = True
 
 TESTING_IS_PW = False
 TESTING_IS_SW = False
@@ -238,7 +238,7 @@ def collect_pico_msgs(): #collects all of the picos' messages
     GCS_serial_reader.full_rate_adc_to_angle()
 
 #declare live data visualisation servers
-control_surface_plot = live_plotter_class.Live_plotter(80)
+control_surface_plot = live_plotter_class.Live_plotter(160)
 control_surface_plot.create_datasets("elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap","elevator", "rudder", "port_aileron", "port_flap","starboard_aileron","starboard_flap","actual_pitch","demanded_pitch")
 
 ################################ LAND OF PREVIOUS VALUES
@@ -309,6 +309,8 @@ def fetch_messages_and_update():
         airplane_data['roll_rate'] = math.degrees(attitude['pitchspeed'])
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
+
+        print(airplane_data['pitch'], airplane_data['roll'],airplane_data['yaw'])
 
         mavlink_loop_timer.update() # Move the counter to the not none loop
         mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())

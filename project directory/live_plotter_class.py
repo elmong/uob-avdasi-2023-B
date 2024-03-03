@@ -81,7 +81,7 @@ class Live_plotter:
         
         #declares figures and provides a source
         fig1 = figure(x_axis_label="Time [s]", y_axis_label="Deflection [Degrees]",title= "Measured Angular Deflection Of Control Surfaces")
-        fig2 = figure(x_axis_label="Time [s]", y_axis_label="Demanded Deflection [Degrees]",title= "Demanded Angular Deflection Of Control Surfaces")
+        fig2 = figure(x_axis_label="Time [s]", y_axis_label="Demanded Deflection [Rate]",title= "Demanded Deflection Of Control Surfaces")
         fig3 = figure(x_axis_label="Time [s]", y_axis_label="Pitch [Degrees]",title= "Demanded and Actual Pitch")
 
         fig1.line(x="x", y="y",legend_label=self.dataset_list[0].name, line_color="tomato", line_width=(2), source=self.dataset_list[0].data_source)
@@ -114,14 +114,14 @@ class Live_plotter:
         fig2.legend.label_standoff = 2
         fig2.legend.spacing = 1
         fig2.legend.margin = 1
-        fig2.y_range = Range1d(-45,45)
+        fig2.y_range = Range1d(-1,1)
         fig3.legend.location = "top_left"
         fig3.legend.label_text_font_size = "11px"
         fig3.legend.label_text_line_height = 1
         fig3.legend.label_standoff = 2
         fig3.legend.spacing = 1
         fig3.legend.margin = 1
-        fig3.y_range = Range1d(-30,30)
+        fig3.y_range = Range1d(-45,45)
 
         doc.add_root(layout(children=[[fig1,fig2],fig3],sizing_mode="scale_both"))
         
