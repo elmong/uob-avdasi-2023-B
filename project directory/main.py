@@ -31,15 +31,15 @@ import csv_plotflightdata
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = True
-TESTING_REAL_PLANE_CHANNELS = False # Testing channels on sim? Or testing servos on real plane? 
+TESTING_GRAPHICS_ONLY = False
+TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = True
 
 TESTING_IS_PW = False
 TESTING_IS_SW = False
-TESTING_IS_FUS = False
+TESTING_IS_FUS = True
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
-DATA_REFRESH_RATE_GLOBAL = 40 # Hz
+DATA_REFRESH_RATE_GLOBAL = 35 # Hz
 DELTA_TIME = 0.01
 SERVO_RATE_LIMIT = 5
 
@@ -303,9 +303,9 @@ def fetch_messages_and_update():
     if attitude is not None:
         attitude = attitude.to_dict()
     #extract value from dictionary : so 'roll', 'pitch', 'yaw'
-        airplane_data['pitch'] = math.degrees(-attitude['roll'] + input_commands['pitch_offset'])
+        airplane_data['pitch'] = math.degrees(-attitude['roll']) + input_commands['pitch_offset']
         airplane_data['pitch_rate'] = math.degrees(-attitude['rollspeed'])
-        airplane_data['roll'] = math.degrees(attitude['pitch'] + input_commands['roll_offset'])
+        airplane_data['roll'] = math.degrees(attitude['pitch']) + input_commands['roll_offset']
         airplane_data['roll_rate'] = math.degrees(attitude['pitchspeed'])
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])

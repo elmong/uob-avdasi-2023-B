@@ -19,7 +19,7 @@ display = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
 screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
-CONTROL_CURSOR_SPRING_BACK = True
+CONTROL_CURSOR_SPRING_BACK = False
 
 MOUSE_X = 0
 MOUSE_Y = 0
@@ -336,7 +336,7 @@ flaps_up_button = ToggleButton(250, 835, 70, 68, colours['pearl'], fonts['dbxl_t
 flaps_to_button = ToggleButton(250 + 75 + 5, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "TO", callback = setflaps.to) 
 flaps_ld_button = ToggleButton(250 + 75 * 2 + 10, 835, 70, 68, colours['pearl'], fonts['dbxl_title'], "FLP", "LG", callback = setflaps.ldg) 
 
-step_button = ToggleButton(747, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
+step_button = ToggleButton(717, 716, 120, 68, colours['pearl'], fonts['dbxl_title'], "STEP", callback = lambda: stepper.send_command()) 
 
 page_fwd_button_pico = Button(1092+45, 826, 45, 29, colours['pearl'], fonts['helvetica_bold'], " >> ", callback = pico_display.increase) 
 page_back_button_pico = Button(1002+90, 826, 45, 29, colours['pearl'], fonts['helvetica_bold'], " << ", callback = pico_display.decrease) 
@@ -368,6 +368,9 @@ roll_offset_right_button = Button(220+5+232+2, 319+5, 232-5-5, 29, colours['pear
 
 pitch_offset_up_button = Button(220+5, 319+5+29+5, 29, 232-5-29-9, colours['pearl'], fonts['helvetica_bold'], "", callback = lambda: input_commands.update(pitch_offset=input_commands['pitch_offset']+1), suppress_drawing = True) 
 pitch_offset_dn_button = Button(220+5, 319+5+29+5 + 196, 29, 226, colours['pearl'], fonts['helvetica_bold'], "", callback = lambda: input_commands.update(pitch_offset=input_commands['pitch_offset']-1), suppress_drawing = True) 
+
+pitch_trim_up_button = Button(826, 321, 65, (696-321)/2, colours['pearl'], fonts['helvetica_bold'], "", continuous_callback = lambda: input_commands.update(pitch_trim=input_commands['pitch_trim']-0.005), suppress_drawing = True) 
+pitch_trim_dn_button = Button(826, 321+(696-321)/2, 65, (696-321)/2, colours['pearl'], fonts['helvetica_bold'], "", continuous_callback = lambda: input_commands.update(pitch_trim=input_commands['pitch_trim']+0.005), suppress_drawing = True) 
 
 ############  I love OOP
 
@@ -832,6 +835,9 @@ def draw_trimmer(trimmer_val):
 
     screen.set_clip(None)
 
+    draw_text_centered( str(round(input_commands['pitch_trim'], 2)), fonts['dbxl_small'], colours['pearl'], 826+65/2+15, 321+(696-321)+50)
+    
+
 def draw_refresh_rate():
     rate = airplane_data['mavlink_refresh_rate']
     if rate > 25:
@@ -1180,7 +1186,8 @@ def pygame_update_loop():
 
     for button in Button.instances:
         button.check_hot(MOUSE_X, MOUSE_Y)
-        button.continuous_actuate()
+        if not mouse_control.mouse_attached_to_ctrl:
+            button.continuous_actuate()
 
     pygame_loop_timer.update() # should come before anything else
     mouse_control.update()
