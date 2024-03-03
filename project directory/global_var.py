@@ -25,6 +25,9 @@ input_commands = {
     'pitch_pid': 0,
     'pitch_pid_unclamped': 0,
     'flap_setting': 0, # this is the position, 0:UP 1:TO 2:LDG
+    'pitch_offset': 0,
+    'roll_offset': 0,
+    'pitch_trim': 0,
 }
 
 control_surfaces = {

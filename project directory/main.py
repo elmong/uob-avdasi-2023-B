@@ -30,7 +30,7 @@ import csv_plotflightdata
 
 ################################
 
-TESTING_ON_SIM = False
+TESTING_ON_SIM = True
 TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = False
@@ -303,9 +303,9 @@ def fetch_messages_and_update():
     if attitude is not None:
         attitude = attitude.to_dict()
     #extract value from dictionary : so 'roll', 'pitch', 'yaw'
-        airplane_data['pitch'] = math.degrees(-attitude['roll'])
+        airplane_data['pitch'] = math.degrees(-attitude['roll'] + input_commands['pitch_offset'])
         airplane_data['pitch_rate'] = math.degrees(-attitude['rollspeed'])
-        airplane_data['roll'] = math.degrees(attitude['pitch'])
+        airplane_data['roll'] = math.degrees(attitude['pitch'] + input_commands['roll_offset'])
         airplane_data['roll_rate'] = math.degrees(attitude['pitchspeed'])
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
@@ -352,15 +352,6 @@ aileron_damper = SmoothDamp()
 prev_flap_angle = 0
 prev_aileron_angle = 0
 
-def elevator_feedback():
-    error = 0
-    gain = 0.05
-    if control_surfaces['elevator']['feedback_mode']:
-        ideal_deflection = input_commands['elevator']  * 45
-        actual_deflection = control_surfaces['elevator']['angle']
-        error = (ideal_deflection - actual_deflection) * gain
-    return error
-
 def flight_controller():
     cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
     # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
@@ -392,7 +383,7 @@ def flight_controller():
                 input_commands['elevator'] = input_commands['pitch_pid']
                 foo = clamper(input_commands['pitch_pid'], -1, 1) # Has to be -1 to 1 because this is setting 
 
-            foo = clamper(foo  + elevator_feedback(), -1, 1)
+            foo = clamper(foo + input_commands['pitch_trim'], -1, 1)
             control_surfaces['elevator']['servo_demand'] = interpolator_elevator.value(foo)
 
         if not control_surfaces['rudder']['manual_control']:

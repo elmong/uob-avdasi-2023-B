@@ -363,6 +363,12 @@ servo_manual_conntrol_button = ToggleButton(1514, 288, 383, 32, colours['light_b
 
 servo_feedback_mode_button = ToggleButton(1514, 288 + 337 - 215, 383, 32, colours['light_blue'], fonts['helvetica_bold'], "", callback = toggle_servo_feedback_mode, suppress_drawing = True) 
 
+roll_offset_left_button = Button(220+5, 319+5, 232-5, 29, colours['pearl'], fonts['helvetica_bold'], "", callback = lambda: input_commands.update(roll_offset=input_commands['roll_offset']-1), suppress_drawing = True) 
+roll_offset_right_button = Button(220+5+232+2, 319+5, 232-5-5, 29, colours['pearl'], fonts['helvetica_bold'], "", callback = lambda: input_commands.update(roll_offset=input_commands['roll_offset']+1), suppress_drawing = True) 
+
+pitch_offset_up_button = Button(220+5, 319+5+29+5, 29, 232-5-29-9, colours['pearl'], fonts['helvetica_bold'], "", callback = lambda: input_commands.update(pitch_offset=input_commands['pitch_offset']+1), suppress_drawing = True) 
+pitch_offset_dn_button = Button(220+5, 319+5+29+5 + 196, 29, 226, colours['pearl'], fonts['helvetica_bold'], "", callback = lambda: input_commands.update(pitch_offset=input_commands['pitch_offset']-1), suppress_drawing = True) 
+
 ############  I love OOP
 
 def draw_line(coord_1, coord_2, width, colour):
@@ -406,6 +412,19 @@ def draw_text_centered(text, font, colour, x, y):
     img = font.render(text, True, colour)
     screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
 
+def draw_text_centered_with_border(text, font, text_colour, border_colour, x, y):
+    text = str(text)
+    text = text.replace('-', '\u2212')
+    text_surface = font.render(text, True, text_colour)
+    border_width = 4
+    border_surface = pygame.Surface((text_surface.get_width() + 2 * border_width,
+                                     text_surface.get_height() + 2 * border_width),
+                                    pygame.SRCALPHA)
+    pygame.draw.rect(border_surface, border_colour,
+                     (0, 0, border_surface.get_width(), border_surface.get_height()))
+    border_surface.blit(text_surface, (border_width, border_width))
+    screen.blit(border_surface, (x - border_surface.get_width() // 2, y - border_surface.get_height() // 2))
+
 ################
 
 def draw_rectangle(x, y, width, height, colour, line_width):
@@ -413,6 +432,9 @@ def draw_rectangle(x, y, width, height, colour, line_width):
     pygame.draw.line(screen, colour, (x, y+height), (x+width, y+height), line_width)
     pygame.draw.line(screen, colour, (x, y), (x, y+height), line_width)
     pygame.draw.line(screen, colour, (x+width, y), (x+width, y+height), line_width)
+
+def draw_centered_circle(color, center, radius):
+    pygame.draw.circle(screen, color, center, radius)
 
 def draw_image_centered(img, x, y):
     screen.blit(img, (x - img.get_width()/2, y - img.get_height()/2))
@@ -702,6 +724,7 @@ def draw_spd_tape(spd):
 
 class Stepper:
     def __init__(self):
+        self.offset = -35
         self.attached_to_ctrl = False
         self.max_pitch = 30
         self.handle_x_coord = (760+853)/2
@@ -716,28 +739,31 @@ class Stepper:
         self.click_start_time = time.time()
 
     def draw(self):
-        draw_line(((760+853)/2-20, 321), ((760+853)/2-20, 696), 3, colours['grey'])
-        draw_line((760+10-20, 696), (853-10-20, 696), 3, colours['pearl'])
-        draw_line((760+10-20, 321), (853-10-20, 321), 3, colours['pearl'])
-        draw_line((760+30-20, (321+696)/2), (853-30-20, (321+696)/2), 3, colours['pearl'])
+        draw_line(((760+853)/2-20 + self.offset, 321), ((760+853)/2-20 + self.offset, 696), 3, colours['grey'])
+        draw_line((760+10-20 + self.offset, 696), (853-10-20 + self.offset, 696), 3, colours['pearl'])
+        draw_line((760+10-20 + self.offset, 321), (853-10-20 + self.offset, 321), 3, colours['pearl'])
+        draw_line((760+30-20 + self.offset, (321+696)/2), (853-30-20 + self.offset, (321+696)/2), 3, colours['pearl'])
 
         pch_cmd = self.displayed_pitch
         half_length = 188 # how high in px from 0 to max pch bar
 
         for i in range(-5, 5 + 1):
             if i != 0:
-                draw_line((760+30-20, (321+696)/2 + (i/6) * half_length), (853-30-20, (321+696)/2 + (i/6) * half_length), 3, colours['grey'])
+                draw_line((760+30-20 + self.offset, (321+696)/2 + (i/6) * half_length), (853-30-20 + self.offset, (321+696)/2 + (i/6) * half_length), 3, colours['grey'])
 
         handle_y_offset = -pch_cmd * (half_length/self.max_pitch)
         self.handle_y_coord = (321+696)/2 + handle_y_offset
         if input_commands['fd_pitch'] == pch_cmd:
-            pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.  handle_height/2, self.handle_width, self.handle_height))
-            pygame.draw.rect(screen, colours['light_blue'], (self.handle_x_coord-self.handle_width/2-20+2, self.handle_y_coord-self.    handle_height/2+2, self.handle_width-4, self.handle_height-4))
+            pygame.draw.rect(screen, colours['green_blue'], (self.handle_x_coord-self.handle_width/2-20 + self.offset, self.handle_y_coord-self.handle_height/2, self.handle_width, self.handle_height))
+            pygame.draw.rect(screen, colours['light_blue'], (self.handle_x_coord-self.handle_width/2-20+2 + self.offset, self.handle_y_coord-self.handle_height/2+2, self.handle_width-4, self.handle_height-4))
         else:
-            pygame.draw.rect(screen, colours['red'], (self.handle_x_coord-self.handle_width/2-20, self.handle_y_coord-self.  handle_height/2, self.handle_width, self.handle_height))
-            pygame.draw.rect(screen, colours['amber'], (self.handle_x_coord-self.handle_width/2-20+2, self.handle_y_coord-self.    handle_height/2+2, self.handle_width-4, self.handle_height-4))
+            pygame.draw.rect(screen, colours['red'], (self.handle_x_coord-self.handle_width/2-20 + self.offset, self.handle_y_coord-self.handle_height/2, self.handle_width, self.handle_height))
+            pygame.draw.rect(screen, colours['amber'], (self.handle_x_coord-self.handle_width/2-20+2 + self.offset, self.handle_y_coord-self.handle_height/2+2, self.handle_width-4, self.handle_height-4))
 
-        draw_text_ycentered(int(pch_cmd), fonts['dbxl'], colours['green'] if input_commands['fd_pitch'] == pch_cmd else colours['amber'], (760+853)/2+20, (321+696)/2)
+        if pch_cmd < 0:
+            draw_text_centered_with_border(int(pch_cmd), fonts['dbxl'], colours['light_blue'] if input_commands['fd_pitch'] == pch_cmd else colours['amber'], colours['bgd'],self.handle_x_coord + self.offset - 40, self.handle_y_coord - 40)
+        else:
+            draw_text_centered_with_border(int(pch_cmd), fonts['dbxl'], colours['light_blue'] if input_commands['fd_pitch'] == pch_cmd else colours['amber'], colours['bgd'],self.handle_x_coord + self.offset - 40, self.handle_y_coord + 40)
 
     def attach(self):
         self.attached_to_ctrl = True
@@ -772,6 +798,39 @@ def draw_menu():
     draw_line((1, 0), (1, h), 3, colours['grey'])
     draw_line((w-2, 0), (w-2, h), 3, colours['grey'])
     draw_text_xcentered('SYSTEM MENU ACCESS', fonts['dbxl_small'], colours['pearl'], 1920/2, 92)
+
+def draw_trimmer(trimmer_val):
+    draw_rectangle(826, 321, 65, 696-321, colours['pearl'], 2)
+    screen.set_clip((826, 321), (65, 696-321))
+    center_x = 826 + 65/2
+    center_y = 321 + (696-321)/2
+
+    notch_height = 30
+    notch_radius = 15
+    notch_gap = 135
+
+    #trimmer_val = -1
+
+    trimmer_val_gain = 1200 # px per unit of trim
+
+    # 0 : -2,2
+    #-1: 
+
+    range_offset = -int(trimmer_val*4)
+    for i in range(-3+range_offset, 4+range_offset):
+        draw_centered_circle(colours['pearl'], (center_x, center_y + notch_height + (i * notch_gap*2) + trimmer_val * trimmer_val_gain), notch_radius)
+        draw_centered_circle(colours['pearl'], (center_x, center_y - notch_height + (i * notch_gap*2) + trimmer_val * trimmer_val_gain), notch_radius)
+        pygame.draw.rect(screen, colours['pearl'], (center_x-notch_radius, center_y-notch_height + (i * notch_gap*2) + trimmer_val * trimmer_val_gain, 2*notch_radius, 2*notch_height))
+
+        draw_centered_circle(colours['pearl'], (center_x - 70/2, center_y + notch_height - notch_gap + (i * notch_gap*2) + trimmer_val * trimmer_val_gain), notch_radius)
+        draw_centered_circle(colours['pearl'], (center_x - 70/2, center_y - notch_height - notch_gap + (i * notch_gap*2) + trimmer_val * trimmer_val_gain), notch_radius)
+        pygame.draw.rect(screen, colours['pearl'], (center_x-notch_radius - 70/2, center_y-notch_height - notch_gap + (i * notch_gap*2) + trimmer_val * trimmer_val_gain, 2*notch_radius, 2*notch_height))
+
+        draw_centered_circle(colours['pearl'], (center_x + 70/2, center_y + notch_height - notch_gap + (i * notch_gap*2) + trimmer_val * trimmer_val_gain), notch_radius)
+        draw_centered_circle(colours['pearl'], (center_x + 70/2, center_y - notch_height - notch_gap + (i * notch_gap*2) + trimmer_val * trimmer_val_gain), notch_radius)
+        pygame.draw.rect(screen, colours['pearl'], (center_x-notch_radius + 70/2, center_y-notch_height - notch_gap + (i * notch_gap*2) + trimmer_val * trimmer_val_gain, 2*notch_radius, 2*notch_height))
+
+    screen.set_clip(None)
 
 def draw_refresh_rate():
     rate = airplane_data['mavlink_refresh_rate']
@@ -1109,9 +1168,9 @@ def pygame_update_loop():
             if within(MOUSE_X, mouse_control.cursor_ctrl_box_x, mouse_control.cursor_ctrl_box_x+mouse_control.cursor_ctrl_side_length) and within(MOUSE_Y, mouse_control.cursor_ctrl_box_y, mouse_control.cursor_ctrl_box_y+mouse_control.cursor_ctrl_side_length) :
                 if input_commands['gcs_in_control']:
                     mouse_control.attach()
-            elif within(MOUSE_X, stepper.handle_x_coord - 50, stepper.handle_x_coord + 50) and within(MOUSE_Y, stepper.handle_y_coord - 20, stepper.handle_y_coord + 20):
+            elif within(MOUSE_X, stepper.handle_x_coord + stepper.offset - 50, stepper.handle_x_coord + stepper.offset + 50) and within(MOUSE_Y, stepper.handle_y_coord - 20, stepper.handle_y_coord + 20):
                 stepper.attach()
-            elif within(MOUSE_X, stepper.region_min_x, stepper.region_max_x) and within(MOUSE_Y, stepper.region_min_y, stepper.region_max_y):
+            elif within(MOUSE_X, stepper.region_min_x + stepper.offset - 20, stepper.region_max_x + stepper.offset - 20) and within(MOUSE_Y, stepper.region_min_y, stepper.region_max_y):
                 stepper.match_handle()
 
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -1145,6 +1204,7 @@ def pygame_draw_loop(): #loop
     draw_pico_coms()
     draw_pid_coef_box()
     draw_ctrl_diag()
+    draw_trimmer(input_commands['pitch_trim'])
     draw_aoa_bar(airplane_data['pitch'])
     stepper.draw()
     mouse_control.draw()
