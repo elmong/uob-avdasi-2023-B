@@ -19,7 +19,7 @@ display = pygame.display.set_mode(MONITOR_SIZE, pygame.RESIZABLE, vsync=1)
 screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Company B Avionics Suite')
 # Can set pygame.FULLSCREEN later if a quit button is made.
-CONTROL_CURSOR_SPRING_BACK = False
+CONTROL_CURSOR_SPRING_BACK = True
 
 MOUSE_X = 0
 MOUSE_Y = 0
