@@ -36,8 +36,8 @@ TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos 
 TESTING_DO_BOKEH = True
 
 TESTING_IS_PW = False
-TESTING_IS_SW = False
-TESTING_IS_FUS = True
+TESTING_IS_SW = True
+TESTING_IS_FUS = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
 DATA_REFRESH_RATE_GLOBAL = 65 # Hz
 DELTA_TIME = 0.01
