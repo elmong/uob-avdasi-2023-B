@@ -21,12 +21,12 @@ import subprocess
 
 #Flags
 #Change to True if you want to plot this
-PLOT_PITCH = False
+PLOT_PITCH = True
 PLOT_ROLL = False
 PLOT_YAW = False
 PLOT_AIRSPEED = False
-PLOT_ELEVATOR_SERVO_ACTUAL = False # this is just a rate plotted
-PLOT_ELEVATOR_ANGLE = False
+PLOT_ELEVATOR_SERVO_ACTUAL = True # this is just a rate plotted
+PLOT_ELEVATOR_ANGLE = True
 
 
 def openImage(path):
@@ -45,8 +45,8 @@ def plot_the_csv_output():
         print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NO CSV FILES EXIST >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         return
     
-    csv_file_path = max(csv_files, key=os.path.getmtime) # get the newest
-    #csv_file_path = "put your path here" #use this if you want to read off of a specific file
+    #csv_file_path = max(csv_files, key=os.path.getmtime) # get the newest
+    #csv_file_path = "Your File Path" #use this if you want to read off of a specific .csv file
     
     #bad code but it works
 
@@ -93,6 +93,8 @@ def plot_the_csv_output():
     
     #if you want to plot any particular column, use the following code, changing the name and column number
     #column.append(["Name goes here", Column Number goes here])
+    
+    #column.append(["Elevator Demanded Rate", 19])
         
     #file name of the output image is just the name, so if doing multiple plots, rename files manually to avoid overwriting
 

@@ -31,7 +31,7 @@ import csv_plotflightdata
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = True
 
