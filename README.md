@@ -1,6 +1,5 @@
-# TOLD YOU NOT TO LOOK AT OUR CODE!!!!!!!
-
-![alt text](https://github.com/elmong/uob-avdasi-2023-B/blob/main/github_img/software2.png))
+![alt
+text](https://github.com/elmong/uob-avdasi-2023-B/blob/main/github_img/software2.png))
 
 project directory/ is where most of the thing happens
 
