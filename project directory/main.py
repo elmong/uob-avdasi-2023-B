@@ -31,15 +31,15 @@ import csv_plotflightdata
 ################################
 
 TESTING_ON_SIM = False
-TESTING_GRAPHICS_ONLY = False
+TESTING_GRAPHICS_ONLY = True
 TESTING_REAL_PLANE_CHANNELS = True # Testing channels on sim? Or testing servos on real plane? 
 TESTING_DO_BOKEH = True
 
 TESTING_IS_PW = False
-TESTING_IS_SW = False
-TESTING_IS_FUS = True
+TESTING_IS_SW = True
+TESTING_IS_FUS = False
 port= 'tcp:127.0.0.1:5762' if TESTING_ON_SIM else 'udp:0.0.0.0:14550'
-DATA_REFRESH_RATE_GLOBAL = 35 # Hz
+DATA_REFRESH_RATE_GLOBAL = 65 # Hz
 DELTA_TIME = 0.01
 SERVO_RATE_LIMIT = 5
 
@@ -169,6 +169,7 @@ def mavlink_logging():
         logging_elapsed_time = time.time() - logging_start_time
         logging_to_csv( filename,
                         logging_elapsed_time,
+                        time.time(),
                         airplane_data['pitch'],
                         airplane_data['roll'],
                         airplane_data['yaw'],
@@ -310,7 +311,6 @@ def fetch_messages_and_update():
         airplane_data['yaw'] = math.degrees(attitude['yaw'])
         airplane_data['yaw_rate'] = math.degrees(attitude['yawspeed'])
 
-        print(airplane_data['pitch'], airplane_data['roll'],airplane_data['yaw'])
 
         mavlink_loop_timer.update() # Move the counter to the not none loop
         mavlink_loop_rate_filter.update(mavlink_loop_timer.get_refresh_rate())
@@ -355,7 +355,7 @@ prev_flap_angle = 0
 prev_aileron_angle = 0
 
 def flight_controller():
-    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd'], feed_in_rate = airplane_data['pitch_rate'])
+    cmd, cmd_unclamped = pitch_pid.update(input_commands['fd_pitch'], airplane_data['pitch'], flight_controller_timer.DELTA_TIME_SMOOTH, PID_values['Kp'], PID_values['Ki'], PID_values['Kd']) #, feed_in_rate = airplane_data['pitch_rate'])
     # Now, the kp of the pid is in units: (Degree of elevator deflection per degree of pitch error)
     input_commands['pitch_pid'] = cmd / 45 # divide by 45 deg to get true elevator deflection
     input_commands['pitch_pid_unclamped'] = cmd_unclamped / 45

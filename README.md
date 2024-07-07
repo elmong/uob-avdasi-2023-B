@@ -1,6 +1,5 @@
-# TOLD YOU NOT TO LOOK AT OUR CODE!!!!!!!
-
-![alt text](https://github.com/elmong/uob-avdasi-2023-B/blob/main/github_img/software2.png))
+![alt
+text](https://github.com/elmong/uob-avdasi-2023-B/blob/main/github_img/software2.png))
 
 project directory/ is where most of the thing happens
 
@@ -13,13 +12,23 @@ Wing
   Flaps TMS, RCS failsafe
   Aileron RCS
 
+## SETUP
+-> Make sure to use Python 3.12.
+-> Run the install_dependencies.bat file to install the libraries the GCS requires.
+
+Option 1:
+-> Open the project directory in Visual Studio Code.
+-> Run the main.py file from there.
+
+Option 2:
+-> Run main.py directly by opening it with Python.
+
 # _DOCUMENDATION:
 There are a few important files in this main ground control repository.
 \project directory contains the main project, with the master script being main.py.
 window_drawing.py is imported with functions for draw loops.
 global_var.py is a master script to bridge across Group 17 and 18's work. That is where Group 18 should feed in their data.
 
-In the future, PID should feed in their controller outputs at main.py for cleanness sake.
 
 ## Code Explanation
 
